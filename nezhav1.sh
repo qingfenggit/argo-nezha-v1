@@ -147,7 +147,7 @@ EOF
             print $1 "=" substr($2,1,4) "******"
         else 
             print $0
-    }' env.txt | column -t
+    }' .env | column -t
 }
 
 # 主流程
