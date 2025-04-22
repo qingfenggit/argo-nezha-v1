@@ -131,7 +131,7 @@ input_variables() {
         fi
     done
     
-    cat > env.txt << EOF
+    cat >.env << EOF
 GITHUB_TOKEN=${GITHUB_TOKEN}
 GITHUB_REPO_OWNER=${GITHUB_REPO_OWNER}
 GITHUB_REPO_NAME=${GITHUB_REPO_NAME}
