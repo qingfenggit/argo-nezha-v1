@@ -65,7 +65,7 @@ https://你在argo隧道中设置的面板域名
 
 4. **手动部署**
 
-依次执行以下命令: 注意--需要在 env.txt 文件中填入变量值
+依次执行以下命令: 注意--需要在 .env 文件中填入变量值
 
 ```bash
 git clone -b github https://ghproxy.net/https://github.com/yutian81/argo-nezha-v1.git
