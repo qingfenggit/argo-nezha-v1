@@ -174,11 +174,8 @@ main() {
         error "克隆失败！请检查: \n1. 网络连接\n2. git是否安装\n3. 镜像地址有效性"
         exit 1
     }
-    
-    cd argo-nezha-v1 || {
-        error "目录切换失败"
-        exit 1
-    }
+    cd argo-nezha-v1 || { error "目录切换失败"; exit 1; }
+    echo ".env" >> .gitignore
     input_variables
     
     info "正在启动服务..."
