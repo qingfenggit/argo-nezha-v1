@@ -13,6 +13,11 @@ success() { echo -e "${GREEN}[成功]${NC} $1"; }
 warning() { echo -e "${YELLOW}[警告]${NC} $1"; }
 error() { echo -e "${RED}[错误]${NC} $1"; }
 
+# 设置变量
+GH_PROXY_URL="https://ghproxy.net"
+GH_CLONE_URL="https://github.com/yutian81/argo-nezha-v1.git"
+PROJECT_DIR="argo-nezha-v1"
+
 # 检查并自动安装docker环境
 check_docker() {
     # 检查并安装 Docker
@@ -163,19 +168,31 @@ main() {
     fi
 
     info "正在克隆仓库..."
-    # [ -d "argo-nezha-v1" ] && {
-    #     warning "检测到已存在的目录，正在强制清理..."
-    #     rm -rf argo-nezha-v1 || {
-    #         error "清理失败！请手动删除 /root/argo-nezha-v1 目录"
-    #         exit 1
-    #     }
-    # }
-    git clone -b github --depth 1 https://ghproxy.net/https://github.com/yutian81/argo-nezha-v1.git || {
-        error "克隆失败！请检查: \n1. 网络连接\n2. git是否安装\n3. 镜像地址有效性"
-        exit 1
-    }
-    cd argo-nezha-v1 || { error "目录切换失败"; exit 1; }
-    echo ".env" >> .gitignore
+    if [ -d "$PROJECT_DIR" ]; then
+        warning "检测到现有安装，执行安全更新..."
+        BACKUP_DIR=$(mktemp -d)
+        trap 'rm -rf "$BACKUP_DIR"' EXIT
+        cp -rf "$PROJECT_DIR"/dashboard "$BACKUP_DIR"/ 2>/dev/null || :
+        cp -f "$PROJECT_DIR"/.env "$BACKUP_DIR"/ 2>/dev/null || :
+        rm -rf "$PROJECT_DIR" || { error "旧目录清理失败"; exit 1; }
+        git clone -b github --depth 1 "$GH_PROXY_URL/$GH_CLONE_URL" || {
+            error "克隆失败！正在恢复备份..."
+            mkdir -p "$PROJECT_DIR"
+            mv "$BACKUP_DIR"/* "$PROJECT_DIR"/ 2>/dev/null
+            exit 1
+        }
+        [ -d "$BACKUP_DIR/dashboard" ] && mv "$BACKUP_DIR/dashboard" "$PROJECT_DIR"/
+        [ -f "$BACKUP_DIR/.env" ] && mv "$BACKUP_DIR/.env" "$PROJECT_DIR"/
+        success "代码更新完成，用户数据保留成功！"
+    else
+        git clone -b github --depth 1 "$GH_PROXY_URL/$GH_CLONE_URL" || {
+            error "克隆失败！原因: 1. 网络问题 2. 镜像不可用"
+            exit 1
+        }
+    fi
+
+    cd "$PROJECT_DIR" || { error "目录切换失败"; exit 1; }
+    grep -qxF ".env" .gitignore || echo ".env" >> .gitignore
     input_variables
     
     info "正在启动服务..."
@@ -184,7 +201,7 @@ main() {
         exit 1
     }
     
-    success "\n哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
+    success "\n✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
     # 显示初始访问信息
     echo -e "\n${YELLOW}首次访问可能需要：${NC}"
     echo -e "1. 等待SSL证书自动签发(约1-2分钟)"
