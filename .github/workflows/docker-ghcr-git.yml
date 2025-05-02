@@ -1,4 +1,4 @@
-name: nezha-v1-docker-ghcr
+name: docker-ghcr-git
 
 on:
   workflow_dispatch:
