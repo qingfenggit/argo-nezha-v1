@@ -16,7 +16,7 @@ error() { echo -e "${RED}[错误]${NC} $1"; }
 # 设置变量
 GH_PROXY_URL="https://ghproxy.net"
 GH_CLONE_URL="https://github.com/yutian81/argo-nezha-v1.git"
-PROJECT_DIR="argo-nezha-v1"
+project_dir="argo-nezha-v1"
 
 # 检查并自动安装docker环境
 check_docker() {
@@ -39,7 +39,7 @@ check_docker() {
     # 检查 Docker 服务状态
     if ! systemctl is-active --quiet docker 2>/dev/null; then
         warning "Docker服务未运行, 正在尝试启动..."
-        sudo systemctl start docker || {
+        systemctl start docker || {
             error "Docker服务启动失败!"
             exit 1
         }
@@ -58,22 +58,81 @@ check_ports() {
         error "443端口已被占用, 请先停止占用服务"
         exit 1
     fi
+    success "443端口可用"
 }
 
 # 验证GitHub Token
 validate_github_token() {
     info "验证GitHub Token权限..."
-    response=$(curl -s -w "%{http_code}" -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              https://api.github.com/user)
-    
+    response=$(curl -s -w "%{http_code}" \
+             -H "Authorization: token $GITHUB_TOKEN" \
+             -H "Accept: application/vnd.github+json" \
+             https://api.github.com/user)
     status=${response: -3}
     body=${response%???}
-    
     if [ "$status" -ne 200 ]; then
         error "Token验证失败! HTTP状态码: $status\n响应信息: $body"
         exit 1
     fi
+}
+
+# 克隆或更新仓库
+clone_or_update_repo() {
+    local clone_url="$1"
+    
+    info "正在处理仓库: $project_dir"
+    if [ -d "$project_dir" ]; then
+        warning "检测到现有安装，执行安全更新..."
+        local backup_dir=$(mktemp -d) || {
+            error "临时目录创建失败"
+            return 1
+        }
+        # 设置退出时自动清理备份目录
+        trap 'rm -rf "$backup_dir"' EXIT
+        # 备份关键数据（静默失败处理）
+        cp -rf "$project_dir/dashboard" "$backup_dir/" 2>/dev/null || :
+        cp -f "$project_dir/.env" "$backup_dir/" 2>/dev/null || :
+        # 清理旧目录
+        if ! rm -rf "$project_dir"; then
+            error "旧目录清理失败"
+            return 2
+        fi
+        
+        # 尝试克隆仓库（带重试机制）
+        if ! retry 3 git clone --branch github --depth 1 "$clone_url" "$project_dir"; then
+            error "克隆失败！正在恢复备份..."
+            mkdir -p "$project_dir" || return 3
+            mv "$backup_dir"/* "$project_dir"/ 2>/dev/null || :
+            return 4
+        fi
+        
+        # 恢复备份数据
+        [ -d "$backup_dir/dashboard" ] && cp -r "$backup_dir/dashboard" "$project_dir/"
+        [ -f "$backup_dir/.env" ] && cp "$backup_dir/.env" "$project_dir/"
+        
+        success "仓库更新完成，用户数据保留成功！"
+    else
+        info "全新安装模式..."
+        if ! retry 3 git clone --branch github --depth 1 "$clone_url" "$project_dir"; then
+            error "克隆失败！原因: 1. 网络问题 2. 镜像不可用"
+            return 5
+        fi
+    fi
+    return 0
+}
+
+# 重试函数
+retry() {
+    local max=$1
+    shift
+    local attempt=1
+    while [ $attempt -le $max ]; do
+        "$@" && return 0
+        warning "操作失败，第 $attempt 次重试..."
+        ((attempt++))
+        sleep $((attempt * 2))
+    done
+    return 1
 }
 
 # 交互式输入变量
@@ -158,40 +217,24 @@ EOF
 # 主流程
 main() {
     trap 'error "脚本被用户中断"; exit 1' INT
-    check_docker
-    check_ports
+    check_docker # 检查docker环境
+    check_ports # 检查端口占用
     
-    info "正在检查网络连接..."
-    if ! curl -s --retry 3 --retry-delay 2 -I https://github.com >/dev/null; then
-        error "网络连接异常，请检查网络设置！"
+	info "正在检查网络连接..."
+	if ! retry 3 curl -s -I https://github.com >/dev/null; then
+		error "网络连接异常，请检查网络设置！"
+		exit 1
+	fi
+
+	# 克隆项目仓库
+    clone_url="${GH_PROXY_URL}/${GH_CLONE_URL}"
+    if ! clone_or_update_repo "$clone_url"; then
+        error "仓库处理失败，错误码: $?"
         exit 1
     fi
 
-    info "正在克隆仓库..."
-    if [ -d "$PROJECT_DIR" ]; then
-        warning "检测到现有安装，执行安全更新..."
-        BACKUP_DIR=$(mktemp -d)
-        trap 'rm -rf "$BACKUP_DIR"' EXIT
-        cp -rf "$PROJECT_DIR"/dashboard "$BACKUP_DIR"/ 2>/dev/null || :
-        cp -f "$PROJECT_DIR"/.env "$BACKUP_DIR"/ 2>/dev/null || :
-        rm -rf "$PROJECT_DIR" || { error "旧目录清理失败"; exit 1; }
-        git clone -b github --depth 1 "$GH_PROXY_URL/$GH_CLONE_URL" || {
-            error "克隆失败！正在恢复备份..."
-            mkdir -p "$PROJECT_DIR"
-            mv "$BACKUP_DIR"/* "$PROJECT_DIR"/ 2>/dev/null
-            exit 1
-        }
-        [ -d "$BACKUP_DIR/dashboard" ] && mv "$BACKUP_DIR/dashboard" "$PROJECT_DIR"/
-        [ -f "$BACKUP_DIR/.env" ] && mv "$BACKUP_DIR/.env" "$PROJECT_DIR"/
-        success "代码更新完成，用户数据保留成功！"
-    else
-        git clone -b github --depth 1 "$GH_PROXY_URL/$GH_CLONE_URL" || {
-            error "克隆失败！原因: 1. 网络问题 2. 镜像不可用"
-            exit 1
-        }
-    fi
-
-    cd "$PROJECT_DIR" || { error "目录切换失败"; exit 1; }
+	# 输入环境变量
+    cd "$project_dir" || { error "目录切换失败"; exit 1; }
     grep -qxF ".env" .gitignore || echo ".env" >> .gitignore
     input_variables
     
@@ -200,8 +243,8 @@ main() {
         error "启动失败！请检查:\n1. Docker服务状态\n2. 磁盘空间\n3. 端口冲突"
         exit 1
     }
-    
     success "\n✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
+    
     # 显示初始访问信息
     echo -e "\n${YELLOW}首次访问可能需要：${NC}"
     echo -e "1. 等待SSL证书自动签发(约1-2分钟)"
@@ -210,9 +253,9 @@ main() {
     
     echo -e "\n${BLUE}▍管理命令: ${NC}"
     echo -e "  🔍 查看状态\t${GREEN}docker ps -a${NC}"
-    echo -e "  📜 查看日志\t${GREEN}docker logs -f $PROJECT_DIR${NC}"
+    echo -e "  📜 查看日志\t${GREEN}docker logs -f argo-nezha-v1${NC}"
     echo -e "\n${BLUE}▍操作指引: ${NC}"
-    echo -e "  📂 请先执行\t${GREEN}cd $PROJECT_DIR${NC}"
+    echo -e "  📂 请先执行\t${GREEN}cd $project_dir${NC}"
     echo -e "  🟢 启动服务\t${GREEN}docker compose up -d${NC}"
     echo -e "  🔴 停止服务\t${GREEN}docker compose stop${NC}"
     echo -e "  🔄 重启服务\t${GREEN}docker compose restart${NC}"
