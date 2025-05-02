@@ -32,16 +32,27 @@ trap 'rm -rf "$TEMP_DIR"' EXIT
 # 通用恢复函数
 restore_latest() {
     local file_type=$1 pattern=$2 target=$3
-    find "$TEMP_DIR/backup_repo/dashboard" -name "$pattern" -exec stat -c "%Y %n" {} \; 2>/dev/null | 
-        sort -nr | head -1 | awk '{print $2}' | while read -r latest_file; do
-            [ -n "$latest_file" ] && break
-            echo "未找到$file_type备份文件"
-            return 1
-        done
-    [ -z "$latest_file" ] && return
-    cp "$latest_file" "$target" 2>/dev/null && \
-        echo "$file_type 恢复成功 (来自: $(basename "$latest_file"))" || \
+    local latest_file find_output
+    
+    # 使用临时文件存储查找结果
+    find_output=$(mktemp)
+    find "$TEMP_DIR/backup_repo/dashboard" -name "$pattern" -exec stat -c "%Y %n" {} \; 2>/dev/null > "$find_output"
+    # 处理查找结果
+    latest_file=$(sort -nr "$find_output" | head -1 | awk '{print $2}')
+    rm -f "$find_output"
+    if [ -z "$latest_file" ]; then
+        echo "注意: 未找到$file_type备份文件"
+        return 1
+    fi
+    
+    echo "正在恢复$file_type: $latest_file → $target"
+    mkdir -p "$(dirname "$target")"
+    if cp "$latest_file" "$target" 2>/dev/null; then
+        echo "$file_type 恢复成功 (来自: $(basename "$latest_file"))"
+        return 0
+    else
         die "$file_type 恢复失败"
+    fi
 }
 
 # 恢复备份
@@ -57,8 +68,8 @@ restore_backup() {
     
     echo "正在从备份恢复数据..."
     mkdir -p dashboard/
-    restore_latest "数据库" "sqlite_*.db" "dashboard/sqlite.db"
-    restore_latest "配置" "config_*.yaml" "dashboard/config.yaml"
+    restore_latest "数据库" "sqlite_*.db" "dashboard/sqlite.db" || return 1
+    restore_latest "配置" "config_*.yaml" "dashboard/config.yaml" || return 1
 }
 
 # 创建备份
