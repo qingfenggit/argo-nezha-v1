@@ -2,6 +2,8 @@
 
 本项目修改自 [ssfun/argo-nezha](https://github.com/ssfun/argo-nezha)，原版采用 cf-r2 作为备份方案，我改成了采用 `github 私有仓库`作为备份方案
 
+**完整教程**:<https://blog.811520.xyz/post/2025/04/nezhav1-argo-bak/>
+
 ----
 
 ## 项目特点：
