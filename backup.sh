@@ -1,19 +1,14 @@
 #!/bin/bash
 
-
 # 加载同目录下的.env文件（如果存在）
 #SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 #if [ -f "$SCRIPT_DIR/.env" ]; then
-#    # 安全加载.env文件，避免执行任意命令
 #    while IFS='=' read -r key value; do
-#        # 跳过注释行和空行
 #        [[ "$key" =~ ^# ]] || [[ -z "$key" ]] && continue
-#        # 移除值部分的引号
 #        value="${value%\"}"
 #        value="${value#\"}"
 #        value="${value%\'}"
 #        value="${value#\'}"
-#        # 设置环境变量
 #        export "$key"="$value"
 #    done < "$SCRIPT_DIR/.env"
 #fi
