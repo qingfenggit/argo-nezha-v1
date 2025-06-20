@@ -265,7 +265,7 @@ main() {
 	    # 精确验证任务行
 	    if crontab -l | grep -qF "$new_job"; then
 	        success "自动备份已启用, 日志目录: $backup_log"
-	        echo -e "${BLUE}▍当前定时任务:${NC}"
+	        echo -e "\n${BLUE}▍当前定时任务:${NC}"
 	        crontab -l | grep --color=auto -F "$backup_script"
 	    else
 	        die "定时任务添加失败，请手动检查 crontab"
