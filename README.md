@@ -120,9 +120,17 @@ docker compose up -d
 (crontab -l 2>/dev/null | grep -v "backup.sh"; echo "0 2 * * * /bin/bash /root/argo-nezha-v1/backup.sh backup >> /root/argo-nezha-v1/backup.log 2>&1") | crontab -
 ```
 
+**ssh 进入 `argo-nezha-v1` 目录，修改 `backup.sh` 文件开头的变量，可以执行手动备份和恢复**
+
 可以通过 `crontab -l` 命令查看是否成功
 
-**ssh 进入 `argo-nezha-v1` 目录，修改 `backup.sh` 文件开头的变量，可以执行手动备份和恢复**
+**同时添加自动更新和自动备份的任务**
+
+```bash
+(crontab -l 2>/dev/null | grep -vE 'argo-nezha-v1|backup.sh';
+ echo "0 3 * * * cd /root/argo-nezha-v1 && docker compose pull && docker compose up -d >> /root/argo-nezha-v1/update.log";
+ echo "0 2 * * * /bin/bash /root/argo-nezha-v1/backup.sh backup >> /root/argo-nezha-v1/backup.log") | crontab -
+```
 
 ### 手动备份
 ```bash
