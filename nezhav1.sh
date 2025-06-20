@@ -162,7 +162,8 @@ input_variables() {
                  https://api.github.com/repos/$GITHUB_REPO_OWNER/$GITHUB_REPO_NAME)
 
     case $repo_status in
-        200) success "仓库已存在，跳过创建" ;;
+        200)
+	    success "仓库已存在，跳过创建" ;;
         404)
             info "正在创建私有仓库..."
             curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
@@ -173,8 +174,12 @@ input_variables() {
                 exit 1
             }
             success "私有仓库 $GITHUB_REPO_NAME 创建成功！" ;;
-        403) error "API速率限制已达上限, 请稍后重试" ;;
-        *)   error "GitHub API访问异常 (HTTP $repo_status)" ;;
+        403)
+	    error "API速率限制已达上限, 请稍后重试"
+            exit 1
+	    ;;
+        *)
+	    error "检查仓库时遇到未知错误 (HTTP $repo_status)" ;;
     esac
     
     echo -e "\n${YELLOW}Argo Token 说明：${NC}"
