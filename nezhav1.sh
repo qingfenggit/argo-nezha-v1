@@ -205,7 +205,7 @@ ARGO_DOMAIN=${ARGO_DOMAIN}
 EOF
     
     # 显示配置摘要（隐藏敏感信息）
-    success "生成配置摘要："
+    success "\n生成配置摘要："
     awk -F'=' '{
         if($1=="GITHUB_TOKEN" || $1=="ARGO_AUTH") 
             print $1 "=" substr($2,1,4) "******"
@@ -226,26 +226,26 @@ main() {
 		exit 1
 	fi
 
-	# 克隆项目仓库
+    # 克隆项目仓库
     clone_url="${GH_PROXY_URL}/${GH_CLONE_URL}"
     if ! clone_or_update_repo "$clone_url"; then
         error "仓库处理失败，错误码: $?"
         exit 1
     fi
 
-	# 输入环境变量
+    # 输入环境变量
     cd "$project_dir" || { error "目录切换失败"; exit 1; }
     grep -qxF ".env" .gitignore || echo ".env" >> .gitignore
     input_variables
     
-    info "正在启动服务..."
+    info "\n正在启动服务..."
     docker compose pull && docker compose up -d || {
         error "启动失败！请检查:\n1. Docker服务状态\n2. 磁盘空间\n3. 端口冲突"
         exit 1
     }
     success "\n✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
-	# 配置自动备份
+    # 配置自动备份
     CRON_DIR="$(dirname "$(realpath "$0")")"
 	[ -d "$CRON_DIR" ] || { error "项目目录不存在: $CRON_DIR"; exit 1; }
     info "检测到项目安装路径: $CRON_DIR"
@@ -265,7 +265,7 @@ main() {
 	        crontab -l | grep --color=auto -E 'backup.sh'
 	    else
 	        error "定时任务添加失败"
-		    exit 1
+		exit 1
 	    fi
 	else
 	    info "已跳过数据自动备份配置"
