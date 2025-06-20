@@ -42,7 +42,7 @@
 ## 快速开始
 
 ### VPS 平台
-1. **执行一键脚本**
+#### **执行一键脚本**
 
 ```bash
 bash <(curl -sSL https://raw.githubusercontent.com/yutian81/argo-nezha-v1/github/nezhav1.sh)
@@ -50,7 +50,7 @@ bash <(curl -sSL https://raw.githubusercontent.com/yutian81/argo-nezha-v1/github
 
 **20250620更新**：已修复自动备份功能——执行上述脚本后根据提示开启自动备份功能，脚本会向系统写入备份脚本的定时任务
 
-2. **按提示输入以下变量**
+#### **按提示输入以下变量**
 
 - **GITHUB_TOKEN**=github的访问令牌
 - **GITHUB_REPO_OWNER**=github用户名
