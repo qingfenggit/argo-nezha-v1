@@ -246,32 +246,32 @@ main() {
     success "\n✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
 	# 配置自动备份
+	CRON_DIR="$(pwd)"
+	info "当前工作目录为: $CRON_DIR"
 	read -p $'\n是否开启数据自动备份？(每天2点执行) [y/N] ' enable_backup
 	if [[ "$enable_backup" =~ [Yy] ]]; then
-	    # 获取当前脚本的绝对路径
-	    CRON_DIR="$(dirname "$(realpath "$0")")"
-	    BACKUP_SCRIPT="$CRON_DIR/backup.sh"
-	    LOG_FILE="$CRON_DIR/backup.log"
-	    [ -x "$BACKUP_SCRIPT" ] || { error "备份脚本不可执行: $BACKUP_SCRIPT"; exit 1; }
+	    backup_script="$CRON_DIR/backup.sh"
+	    backup_log="$CRON_DIR/backup.log"
+	    [ -f "$backup_script" ] || die "未找到备份脚本: $backup_script"
+	    [ -x "$backup_script" ] || { chmod +x "$backup_script" || die "权限设置失败: $backup_script"; }
 	    
 	    # 原子化配置定时任务
-	    NEW_JOB="0 2 * * * /bin/bash '$BACKUP_SCRIPT' backup >> '$LOG_FILE' 2>&1"
+	    new_job="0 2 * * * /bin/bash '$backup_script' backup >> '$backup_log' 2>&1"
 	    (
-	        crontab -l 2>/dev/null | grep -vF "$NEW_JOB"
-	        echo "$NEW_JOB"
+	        crontab -l 2>/dev/null | grep -vF "$new_job"
+	        echo "$new_job"
 	    ) | crontab -
-	
-	    # 精确验证
-	    if crontab -l | grep -qF "$NEW_JOB"; then
-	        success "数据自动备份已启用 (日志: %s)" "$LOG_FILE"
-	        echo -e "\n${BLUE}▍当前定时任务列表: ${NC}"
-	        crontab -l | grep --color=auto -F "$BACKUP_SCRIPT"
+
+	    # 精确验证任务行
+	    if crontab -l | grep -qF "$new_job"; then
+	        success "自动备份已启用, 日志目录: $backup_log"
+	        echo -e "${BLUE}▍当前定时任务:${NC}"
+	        crontab -l | grep --color=auto -F "$backup_script"
 	    else
-	        error "定时任务添加失败" 
-	        exit 1
+	        die "定时任务添加失败，请手动检查 crontab"
 	    fi
 	else
-	    info "已跳过数据自动备份配置"
+	    info "已跳过自动备份配置"
 	fi
     
     # 显示初始访问信息
