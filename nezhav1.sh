@@ -245,31 +245,27 @@ main() {
     }
     success "\n✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
-    cd "$project_dir" || { error "目录切换失败"; exit 1; }
-    CRON_PROJECT_DIR="$(pwd)"  # 这行应放在切换目录后
-    info "检测到项目安装路径: $CRON_PROJECT_DIR"
-
-	# 配置自动更新
-	echo -e "\n${YELLOW}==== 定时任务配置 ====${NC}"
-	read -p "是否开启容器自动更新？(每天3点执行) [y/N] " enable_update
-	if [[ "$enable_update" =~ [Yy] ]]; then
-	    (
-	        crontab -l 2>/dev/null | grep -v "argo-nezha-v1"
-	        echo "0 3 * * * cd $CRON_PROJECT_DIR && /usr/bin/docker compose pull --quiet && /usr/bin/docker compose up -d >> $CRON_PROJECT_DIR/update.log 2>&1"
-	    ) | crontab -
-	    success "容器自动更新已启用 "
-	else
-	    info "已跳过容器自动更新配置"
-	fi
-	
 	# 配置自动备份
-	read -p "是否开启数据自动备份？(每天2点执行) [y/N] " enable_backup
+    CRON_DIR="$(dirname "$(realpath "$0")")"
+	[ -d "$CRON_DIR" ] || error "项目目录不存在: $CRON_DIR"; exit 1
+    info "检测到项目安装路径: $CRON_DIR"
+	
+	read -p "\n是否开启数据自动备份？(每天2点执行) [y/N] " enable_backup
 	if [[ "$enable_backup" =~ [Yy] ]]; then
+ 		[ -x "$CRON_DIR/backup.sh" ] || error "备份脚本不可执行: $CRON_DIR/backup.sh"; exit 1
 	    (
-	        crontab -l 2>/dev/null | grep -v "backup.sh"
-	        echo "0 2 * * * /bin/bash $CRON_PROJECT_DIR/backup.sh backup >> $CRON_PROJECT_DIR/backup.log 2>&1"
+	        crontab -l 2>/dev/null | grep -v "/backup.sh backup"
+	        echo "0 2 * * * /bin/bash $CRON_DIR/backup.sh backup >> $CRON_DIR/backup.log 2>&1"
 	    ) | crontab -
 	    success "数据自动备份已启用 "
+	    # 验证配置
+	    if crontab -l | grep -q "backup.sh"; then
+	        success "数据自动备份已启用 (日志: $CRON_DIR/backup.log)"
+	        echo -e "\n${BLUE}▍当前定时任务列表: ${NC}"
+	        crontab -l | grep --color=auto -E 'backup.sh'
+	    else
+	        error "定时任务添加失败"; exit 1
+	    fi
 	else
 	    info "已跳过数据自动备份配置"
 	fi
@@ -279,10 +275,6 @@ main() {
     echo -e "1. 等待SSL证书自动签发(约1-2分钟)"
     echo -e "2. 检查防火墙/安全组放行443端口"
     echo -e "3. aogo 隧道要打开--其他设置--TLS--无TLS验证: on; HTTP2连接: on"
-
-	# 显示定时任务列表
-	echo -e "\n${BLUE}▍当前定时任务列表: ${NC}"
-	crontab -l | grep -E 'argo-nezha-v1|backup.sh' --color=auto || info "未检测到相关定时任务"
 
 	# 显示常用的 docker 命令
     echo -e "\n${BLUE}▍管理命令: ${NC}"
