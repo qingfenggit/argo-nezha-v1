@@ -22,7 +22,7 @@ project_dir="argo-nezha-v1"
 check_docker() {
     # 检查并安装 Docker
     if ! command -v docker &>/dev/null; then
-        warning "Docker未安装, 正在自动安装..."
+        warning "\nDocker未安装, 正在自动安装..."
         curl -fsSL https://get.docker.com | sh || {
             error "Docker安装失败! 请手动安装后重试"
             exit 1
@@ -38,7 +38,7 @@ check_docker() {
     
     # 检查 Docker 服务状态
     if ! systemctl is-active --quiet docker 2>/dev/null; then
-        warning "Docker服务未运行, 正在尝试启动..."
+        warning "\nDocker服务未运行, 正在尝试启动..."
         systemctl start docker || {
             error "Docker服务启动失败!"
             exit 1
@@ -55,7 +55,7 @@ check_ports() {
         port_occupied=true
     fi
     if $port_occupied; then
-        error "443端口已被占用, 请先停止占用服务"
+        error "\n443端口已被占用, 请先停止占用服务"
         exit 1
     fi
     success "443端口可用"
@@ -82,7 +82,7 @@ clone_or_update_repo() {
     
     info "正在处理仓库: $project_dir"
     if [ -d "$project_dir" ]; then
-        warning "检测到现有安装，执行安全更新..."
+        warning "\n检测到现有安装，执行安全更新..."
         local backup_dir=$(mktemp -d) || {
             error "临时目录创建失败"
             return 1
