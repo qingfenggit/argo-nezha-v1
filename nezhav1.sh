@@ -205,7 +205,7 @@ ARGO_DOMAIN=${ARGO_DOMAIN}
 EOF
     
     # 显示配置摘要（隐藏敏感信息）
-    success "\n生成配置摘要："
+    success "生成配置摘要："
     awk -F'=' '{
         if($1=="GITHUB_TOKEN" || $1=="ARGO_AUTH") 
             print $1 "=" substr($2,1,4) "******"
@@ -220,11 +220,11 @@ main() {
     check_docker # 检查docker环境
     check_ports # 检查端口占用
     
-	info "正在检查网络连接..."
-	if ! retry 3 curl -s -I https://github.com >/dev/null; then
-		error "网络连接异常，请检查网络设置！"
-		exit 1
-	fi
+    info "正在检查网络连接..."
+    if ! retry 3 curl -s -I https://github.com >/dev/null; then
+	error "网络连接异常，请检查网络设置！"
+	exit 1
+    fi
 
     # 克隆项目仓库
     clone_url="${GH_PROXY_URL}/${GH_CLONE_URL}"
@@ -238,41 +238,42 @@ main() {
     grep -qxF ".env" .gitignore || echo ".env" >> .gitignore
     input_variables
     
-    info "\n正在启动服务..."
+    info "正在启动服务..."
     docker compose pull && docker compose up -d || {
         error "启动失败！请检查:\n1. Docker服务状态\n2. 磁盘空间\n3. 端口冲突"
         exit 1
     }
-    success "\n✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
+    success "✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
-	# 配置自动备份
-	CRON_DIR="$(pwd)"
-	info "当前工作目录为: $CRON_DIR"
-	read -p $'\n是否开启数据自动备份？(每天2点执行) [y/N] ' enable_backup
-	if [[ "$enable_backup" =~ [Yy] ]]; then
-	    backup_script="$CRON_DIR/backup.sh"
-	    backup_log="$CRON_DIR/backup.log"
-	    [ -f "$backup_script" ] || die "未找到备份脚本: $backup_script"
-	    [ -x "$backup_script" ] || { chmod +x "$backup_script" || die "权限设置失败: $backup_script"; }
-	    
-	    # 原子化配置定时任务
-	    new_job="0 2 * * * /bin/bash '$backup_script' backup >> '$backup_log' 2>&1"
-	    (
-	        crontab -l 2>/dev/null | grep -vF "$new_job"
-	        echo "$new_job"
-	    ) | crontab -
+    # 配置自动备份
+    CRON_DIR="$(pwd)"
+    info "当前工作目录为: $CRON_DIR"
+    read -p $'\n是否开启数据自动备份？(每天2点执行) [y/N] ' enable_backup
 
-	    # 精确验证任务行
-	    if crontab -l | grep -qF "$new_job"; then
-	        success "自动备份已启用, 日志目录: $backup_log"
-	        echo -e "\n${BLUE}▍当前定时任务:${NC}"
-	        crontab -l | grep --color=auto -F "$backup_script"
-	    else
-	        die "定时任务添加失败，请手动检查 crontab"
-	    fi
-	else
-	    info "已跳过自动备份配置"
-	fi
+    if [[ "$enable_backup" =~ [Yy] ]]; then
+        backup_script="$CRON_DIR/backup.sh"
+        backup_log="$CRON_DIR/backup.log"
+        [ -f "$backup_script" ] || { warning "未找到备份脚本: $backup_script"; }
+        chmod +x "$backup_script" || { warning "权限设置失败: $backup_script"; }
+    
+        # 原子化配置定时任务
+        new_job="0 2 * * * /bin/bash '$backup_script' backup >> '$backup_log' 2>&1"
+        (
+            crontab -l 2>/dev/null | grep -vF "$new_job"
+            echo "$new_job"
+        ) | crontab -
+    
+        # 精确验证任务行
+        if crontab -l | grep -qF "$new_job"; then
+            success "自动备份已启用, 日志目录: $backup_log"
+            echo -e "\n${BLUE}▍当前定时任务:${NC}"
+            crontab -l | grep --color=auto -F "$backup_script"
+        else
+            warning "定时任务添加失败，请手动添加 crontab"
+        fi
+    else
+        info "已跳过自动备份配置"
+    fi
     
     # 显示初始访问信息
     echo -e "\n${YELLOW}首次访问可能需要：${NC}"
@@ -280,7 +281,7 @@ main() {
     echo -e "2. 检查防火墙/安全组放行443端口"
     echo -e "3. aogo 隧道要打开--其他设置--TLS--无TLS验证: on; HTTP2连接: on"
 
-	# 显示常用的 docker 命令
+    # 显示常用的 docker 命令
     echo -e "\n${BLUE}▍管理命令: ${NC}"
     echo -e "  🔍 查看状态\t${GREEN}docker ps -a${NC}"
     echo -e "  📜 查看日志\t${GREEN}docker logs -f argo-nezha-v1${NC}"
