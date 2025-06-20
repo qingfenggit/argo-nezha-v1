@@ -1,23 +1,27 @@
 #!/bin/bash
 
 # 加载同目录下的.env文件（如果存在）
-#SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-#if [ -f "$SCRIPT_DIR/.env" ]; then
-#    while IFS='=' read -r key value; do
-#        [[ "$key" =~ ^# ]] || [[ -z "$key" ]] && continue
-#        value="${value%\"}"
-#        value="${value#\"}"
-#        value="${value%\'}"
-#        value="${value#\'}"
-#        export "$key"="$value"
-#    done < "$SCRIPT_DIR/.env"
-#fi
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^# ]] || [[ -z "$key" ]] && continue
+        value="${value%\"}"
+        value="${value#\"}"
+        value="${value%\'}"
+        value="${value#\'}"
+        export "$key"="$value"
+    done < "$SCRIPT_DIR/.env"
+fi
 
 # 设置默认值
 GITHUB_TOKEN=${GITHUB_TOKEN:-""}
 GITHUB_REPO_OWNER=${GITHUB_REPO_OWNER:-""}
 GITHUB_REPO_NAME=${GITHUB_REPO_NAME:-""}
 BACKUP_BRANCH=${BACKUP_BRANCH:-"nezha-v1"}
+
+LOG_DIR="/root/argo-nezha-v1"
+LOG_FILES=("update.log" "backup.log")
+LOG_DAYS=7  # 日志保留天数
 
 urlencode() {
     echo -n "$1" | od -An -tx1 | tr -d '\n ' | sed 's/../%&/g'
@@ -31,6 +35,30 @@ die() { echo "错误: $*" >&2; exit 1; }
 # 检查必要环境变量
 [ -z "$GITHUB_TOKEN" ] || [ -z "$GITHUB_REPO_OWNER" ] || [ -z "$GITHUB_REPO_NAME" ] && {
     die "未设置必要环境变量, 正在跳过备份/还原"
+}
+
+# 日志清理函数
+clean_old_logs() {
+    echo "正在执行日志清理..."
+    if [ ! -d "$LOG_DIR" ]; then
+        echo "警告: 日志目录不存在 - $LOG_DIR" >&2
+        return 1
+    fi
+    if [ ! -w "$LOG_DIR" ]; then
+        echo "错误: 无写入权限 - $LOG_DIR" >&2
+        return 2
+    fi
+
+    # 清理操作
+    local deleted_count=0
+    for logfile in "${LOG_FILES[@]}"; do
+        find "$LOG_DIR" -maxdepth 1 -name "$logfile" -type f -mtime +$LOG_DAYS | while read -r file; do
+            echo "清理过期日志: $(basename "$file")"
+            rm -f "$file" && ((deleted_count++))
+        done
+    done
+
+    echo "已清理 $deleted_count 个过期日志文件"
 }
 
 # 初始化环境
@@ -129,6 +157,8 @@ create_backup() {
         git push origin "$BACKUP_BRANCH" || die "推送备份到GitHub失败"
         set +e
     )
+
+    clean_old_logs || { echo "注意: 日志清理未完成，但不影响备份结果" >&2 }
     
     echo "备份完成！新增备份文件："
     echo " - sqlite_$TIMESTAMP.db"
@@ -139,5 +169,7 @@ create_backup() {
 case "$1" in
     restore) restore_backup ;;
     backup)  create_backup ;;
-    *)       echo "Usage: $0 {backup|restore}" >&2; exit 1 ;;
+    *)
+    echo "Usage: $0 {backup|restore}" >&2
+    exit 1 ;;
 esac
