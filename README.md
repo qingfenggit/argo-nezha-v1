@@ -48,12 +48,13 @@
 bash <(curl -sSL https://raw.githubusercontent.com/yutian81/argo-nezha-v1/github/nezhav1.sh)
 ```
 
+**20250620更新**：已修复自动备份功能——执行上述脚本后根据提示开启自动备份功能，脚本会向系统写入备份脚本的定时任务
+
 2. **按提示输入以下变量**
 
 - **GITHUB_TOKEN**=github的访问令牌
 - **GITHUB_REPO_OWNER**=github用户名
 - **GITHUB_REPO_NAME**=用于备份的github仓库名
-- **BACKUP_BRANCH**=用于备份的github仓库分支
 - **ARGO_AUTH**='Cloudflare Argo Tunnel 令牌'，json格式的秘钥必须用英文单引号包裹
 - **ARGO_DOMAIN**=在argo中设置的哪吒面板域名
 
