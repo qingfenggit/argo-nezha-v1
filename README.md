@@ -117,7 +117,7 @@ docker compose up -d
 如果自动备份没有生效，运行以下命令以添加自动备份的计划任务
 
 ```bash
-(crontab -l 2>/dev/null; grep -v "backup.sh"; echo "0 2 * * * /bin/bash /root/argo-nezha-v1/backup.sh backup >> /root/argo-nezha-v1/backup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null | grep -v "backup.sh"; echo "0 2 * * * /bin/bash /root/argo-nezha-v1/backup.sh backup >> /root/argo-nezha-v1/backup.log 2>&1") | crontab -
 ```
 
 可以通过 `crontab -l` 命令查看是否成功
