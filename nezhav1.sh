@@ -247,24 +247,25 @@ main() {
 
 	# 配置自动备份
     CRON_DIR="$(dirname "$(realpath "$0")")"
-	[ -d "$CRON_DIR" ] || error "项目目录不存在: $CRON_DIR"; exit 1
+	[ -d "$CRON_DIR" ] || { error "项目目录不存在: $CRON_DIR"; exit 1; }
     info "检测到项目安装路径: $CRON_DIR"
 	
 	read -p "\n是否开启数据自动备份？(每天2点执行) [y/N] " enable_backup
 	if [[ "$enable_backup" =~ [Yy] ]]; then
- 		[ -x "$CRON_DIR/backup.sh" ] || error "备份脚本不可执行: $CRON_DIR/backup.sh"; exit 1
+ 		[ -x "$CRON_DIR/backup.sh" ] || { error "备份脚本不可执行: $CRON_DIR/backup.sh"; exit 1; }
 	    (
 	        crontab -l 2>/dev/null | grep -v "/backup.sh backup"
-	        echo "0 2 * * * /bin/bash $CRON_DIR/backup.sh backup >> $CRON_DIR/backup.log 2>&1"
+	        echo "0 2 * * * /bin/bash '$CRON_DIR/backup.sh' backup >> '$CRON_DIR/backup.log' 2>&1"
 	    ) | crontab -
 	    success "数据自动备份已启用 "
 	    # 验证配置
-	    if crontab -l | grep -q "backup.sh"; then
+	    if crontab -l | grep -q "backup.sh backup"; then
 	        success "数据自动备份已启用 (日志: $CRON_DIR/backup.log)"
 	        echo -e "\n${BLUE}▍当前定时任务列表: ${NC}"
 	        crontab -l | grep --color=auto -E 'backup.sh'
 	    else
-	        error "定时任务添加失败"; exit 1
+	        error "定时任务添加失败"
+		    exit 1
 	    fi
 	else
 	    info "已跳过数据自动备份配置"
