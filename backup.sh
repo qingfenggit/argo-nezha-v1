@@ -39,23 +39,19 @@ die() { echo "错误: $*" >&2; exit 1; }
 
 # 检查并安装依赖
 check_dependencies() {
-    local missing=()
-    # 检查 sqlite3
     if ! command -v sqlite3 &>/dev/null; then
-        missing+=("sqlite3")
         echo "正在尝试自动安装 sqlite3..."
-        # 根据发行版选择包管理器
         if command -v apt-get &>/dev/null; then
-            sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev
+            sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev || die "安装失败"
         elif command -v yum &>/dev/null; then
-            sudo yum install -y sqlite sqlite-devel
+            sudo yum install -y sqlite sqlite-devel || die "安装失败"
         elif command -v apk &>/dev/null; then
-            sudo apk add sqlite sqlite-dev
+            sudo apk add sqlite sqlite-dev || die "安装失败"
         else
-            die "无法自动安装sqlite3，请手动安装后重试"
+            die "无法识别包管理器，请手动安装sqlite3"
         fi
+        command -v sqlite3 &>/dev/null || die "sqlite3安装后仍不可用"
     fi
-    [ ${#missing[@]} -gt 0 ] && die "以下依赖未安装: ${missing[*]}"
 }
 
 # 日志清理函数
