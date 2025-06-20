@@ -158,7 +158,7 @@ create_backup() {
         set +e
     )
 
-    clean_old_logs || { echo "注意: 日志清理未完成，但不影响备份结果" >&2 }
+    clean_old_logs || { echo "注意: 日志清理未完成，但不影响备份结果" >&2; }
     
     echo "备份完成！新增备份文件："
     echo " - sqlite_$TIMESTAMP.db"
