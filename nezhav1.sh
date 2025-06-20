@@ -8,7 +8,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'  # 重置颜色
 
 # 带颜色的输出函数
-info() { echo -e "${BLUE}[信息]${NC} $1"; }
+info() { echo -e "${BLUE}[提示]${NC} $1"; }
 success() { echo -e "${GREEN}[成功]${NC} $1"; }
 warning() { echo -e "${YELLOW}[警告]${NC} $1"; }
 error() { echo -e "${RED}[错误]${NC} $1"; }
@@ -169,7 +169,7 @@ input_variables() {
             curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
                  -H "Accept: application/vnd.github+json" \
                  -d '{"name":"'"$GITHUB_REPO_NAME"'","private":true}' \
-                 https://api.github.com/user/repos || {
+            https://api.github.com/user/repos || {
                 error "仓库创建失败！请检查：\n1. Token是否有repo权限\n2. 仓库名是否合法"
                 exit 1
             }
@@ -179,7 +179,9 @@ input_variables() {
             exit 1
 	    ;;
         *)
-	    error "检查仓库时遇到未知错误 (HTTP $repo_status)" ;;
+	    error "检查仓库时遇到未知错误 (HTTP $repo_status)"
+            exit 1
+	    ;;
     esac
     
     echo -e "\n${YELLOW}Argo Token 说明：${NC}"
@@ -193,7 +195,7 @@ input_variables() {
     
     while true; do
         read -p $'\n哪吒面板域名 (如nezha.example.com): ' ARGO_DOMAIN
-        if [[ "$ARGO_DOMAIN" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+        if [[ "$ARGO_DOMAIN" =~ ^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$ ]]; then
             break
         else
             warning "域名格式无效！请使用类似 nezha.example.com 的格式"
@@ -227,8 +229,8 @@ main() {
     
     info "正在检查网络连接..."
     if ! retry 3 curl -s -I https://github.com >/dev/null; then
-	error "网络连接异常，请检查网络设置！"
-	exit 1
+        error "网络连接异常，请检查网络设置！"
+        exit 1
     fi
 
     # 克隆项目仓库
