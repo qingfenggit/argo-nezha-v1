@@ -140,7 +140,7 @@ input_variables() {
     echo -e "\n${YELLOW}==== 配置输入 (按Ctrl+C退出) ====${NC}"
     
     while true; do
-        read -p "\nGitHub Token: " GITHUB_TOKEN
+        read -p $'\nGitHub Token: ' GITHUB_TOKEN
         [ -n "$GITHUB_TOKEN" ] && break
         warning "Token不能为空!"
     done
@@ -148,12 +148,12 @@ input_variables() {
     validate_github_token
     
     while true; do
-        read -p "\nGitHub 用户名: " GITHUB_REPO_OWNER
+        read -p $'\nGitHub 用户名: ' GITHUB_REPO_OWNER
         [ -n "$GITHUB_REPO_OWNER" ] && break
         warning "用户名不能为空!"
     done
     
-    read -p "\n用于备份的 GitHub 仓库名 (默认创建私有仓库 nezha-backup): " GITHUB_REPO_NAME
+    read -p $'\n用于备份的 GitHub 仓库名 (默认创建私有仓库 nezha-backup): ' GITHUB_REPO_NAME
     GITHUB_REPO_NAME=${GITHUB_REPO_NAME:-nezha-backup}
     # 检查仓库是否存在，不存在则创建
     repo_status=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -181,13 +181,13 @@ input_variables() {
     echo -e " - 纯Token格式: 'ey开头的一长串字符'"
     echo -e " - JSON格式: '{\"Token\":\"xxx\"}' (注意单引号包裹)"
     while true; do
-        read -p "\n请输入Argo Token: " ARGO_AUTH
+        read -p $'\n请输入Argo Token: ' ARGO_AUTH
         [ -n "$ARGO_AUTH" ] && break
         warning "Token不能为空!"
     done
     
     while true; do
-        read -p "\n哪吒面板域名 (如nezha.example.com): " ARGO_DOMAIN
+        read -p $'\n哪吒面板域名 (如nezha.example.com): ' ARGO_DOMAIN
         if [[ "$ARGO_DOMAIN" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
             break
         else
@@ -250,7 +250,7 @@ main() {
 	[ -d "$CRON_DIR" ] || { error "项目目录不存在: $CRON_DIR"; exit 1; }
     info "检测到项目安装路径: $CRON_DIR"
 	
-	read -p "\n是否开启数据自动备份？(每天2点执行) [y/N] " enable_backup
+	read -p $'\n是否开启数据自动备份？(每天2点执行) [y/N] ' enable_backup
 	if [[ "$enable_backup" =~ [Yy] ]]; then
  		[ -x "$CRON_DIR/backup.sh" ] || { error "备份脚本不可执行: $CRON_DIR/backup.sh"; exit 1; }
 	    (
