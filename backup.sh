@@ -37,6 +37,27 @@ die() { echo "错误: $*" >&2; exit 1; }
     die "未设置必要环境变量, 正在跳过备份/还原"
 }
 
+# 检查并安装依赖
+check_dependencies() {
+    local missing=()
+    # 检查 sqlite3
+    if ! command -v sqlite3 &>/dev/null; then
+        missing+=("sqlite3")
+        echo "正在尝试自动安装 sqlite3..."
+        # 根据发行版选择包管理器
+        if command -v apt-get &>/dev/null; then
+            sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev
+        elif command -v yum &>/dev/null; then
+            sudo yum install -y sqlite sqlite-devel
+        elif command -v apk &>/dev/null; then
+            sudo apk add sqlite sqlite-dev
+        else
+            die "无法自动安装sqlite3，请手动安装后重试"
+        fi
+    fi
+    [ ${#missing[@]} -gt 0 ] && die "以下依赖未安装: ${missing[*]}"
+}
+
 # 日志清理函数
 clean_old_logs() {
     echo "正在执行日志清理..."
@@ -112,6 +133,8 @@ restore_backup() {
     restore_latest "数据库" "sqlite_*.db" "dashboard/sqlite.db" || return 1
     restore_latest "配置" "config_*.yaml" "dashboard/config.yaml" || return 1
 }
+
+check_dependencies
 
 # 创建备份
 create_backup() {
