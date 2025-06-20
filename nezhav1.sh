@@ -14,7 +14,7 @@ warning() { echo -e "${YELLOW}[警告]${NC} $1"; }
 error() { echo -e "${RED}[错误]${NC} $1"; }
 
 # 设置变量
-GH_PROXY_URL="https://ghproxy.net"
+GH_PROXY_URL="https://ghfast.top"
 GH_CLONE_URL="https://github.com/yutian81/argo-nezha-v1.git"
 project_dir="argo-nezha-v1"
 
