@@ -109,21 +109,17 @@ docker compose up -d
 (crontab -l 2>/dev/null | grep -v "argo-nezha-v1"; echo "0 3 * * * cd /root/argo-nezha-v1 && /usr/bin/docker compose pull && /usr/bin/docker compose up -d >> /root/argo-nezha-v1/update.log 2>&1") | crontab -
 ```
 
-## 备份和恢复
+### 备份和恢复
 
 **项目支持自动备份到 Github 私有仓库**
 
 备份脚本 `/backup.sh` 会在每天凌晨 2 点执行。
 
-如果自动备份没有生效，运行以下命令以添加自动备份的计划任务
+如果自动备份没有生效，运行以下命令以添加自动备份的计划任务, 可以通过 `crontab -l` 命令查看是否成功
 
 ```bash
 (crontab -l 2>/dev/null | grep -v "backup.sh"; echo "0 2 * * * /bin/bash /root/argo-nezha-v1/backup.sh backup >> /root/argo-nezha-v1/backup.log 2>&1") | crontab -
 ```
-
-**ssh 进入 `argo-nezha-v1` 目录，修改 `backup.sh` 文件开头的变量，可以执行手动备份和恢复**
-
-可以通过 `crontab -l` 命令查看是否成功
 
 **同时添加自动更新和自动备份的任务**
 
