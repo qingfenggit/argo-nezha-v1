@@ -42,7 +42,7 @@ check_dependencies() {
     if ! command -v sqlite3 &>/dev/null; then
         echo "正在尝试自动安装 sqlite3..."
         if command -v apt-get &>/dev/null; then
-            sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev || die "安装失败"
+            sudo apt-get install -y sqlite3 libsqlite3-dev || die "安装失败"
         elif command -v yum &>/dev/null; then
             sudo yum install -y sqlite sqlite-devel || die "安装失败"
         elif command -v apk &>/dev/null; then
