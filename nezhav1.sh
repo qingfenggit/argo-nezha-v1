@@ -88,7 +88,7 @@ check_cron() {
 	    centos) service_name="crond" ;;
 	    *)      service_name="cron" ;;
 	esac
-        if systemctl is-active $service_name &>/dev/null; then
+	if systemctl is-active $service_name &>/dev/null; then
 	    echo "服务已处于运行状态"
 	else
 	    systemctl enable --now "$service_name" &>/dev/null || echo "服务启动失败，自动备份将不可用"
