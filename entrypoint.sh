@@ -42,16 +42,16 @@ check_cron() {
     # 服务管理模块
     echo "尝试启动并设置开机自启..." 
     if command -v systemctl >/dev/null; then
-	os_id=$(awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release)
-	case "$os_id" in
-	    centos) service_name="crond" ;;
-	    *)      service_name="cron" ;;
-	esac
-        if systemctl is-active $service_name &>/dev/null; then
-	    echo "服务已处于运行状态"
-	else
-	    systemctl enable --now "$service_name" &>/dev/null || echo "服务启动失败，自动备份将不可用"
-	fi
+		os_id=$(awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release)
+		case "$os_id" in
+		    centos) service_name="crond" ;;
+		    *)      service_name="cron" ;;
+		esac
+	        if systemctl is-active $service_name &>/dev/null; then
+		    echo "服务已处于运行状态"
+		else
+		    systemctl enable --now "$service_name" &>/dev/null || echo "服务启动失败，自动备份将不可用"
+		fi
     elif command -v rc-service >/dev/null; then
         rc-update add dcron && rc-service dcron start || echo "服务启动失败，自动备份将不可用"  # Alpine使用dcron服务名
     else
