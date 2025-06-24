@@ -311,6 +311,8 @@ main() {
     trap 'error "脚本被用户中断"; exit 1' INT
     check_docker # 检查docker环境
     check_ports # 检查端口占用
+    check_sqlite # 检查sqlite并安装
+    check_cron # 检查cron服务并安装
     
     info "正在检查网络连接..."
     if ! retry 3 curl -s -I https://github.com >/dev/null; then
@@ -337,10 +339,7 @@ main() {
     }
     success "✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
-    # 配置自动备份
-    check_sqlite
-    check_cron
-    config_cron
+    config_cron # 配置自动备份定时任务
 
     # 显示初始访问信息
     echo -e "\n${YELLOW}首次访问可能需要：${NC}"
