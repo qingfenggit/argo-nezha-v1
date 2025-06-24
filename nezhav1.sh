@@ -58,7 +58,7 @@ check_sqlite() {
         elif command -v apk &>/dev/null; then
             apk add sqlite sqlite-dev || warning "sqlite 安装失败，自动备份将不可用"
         else
-            echo "无法识别包管理器，请手动安装 sqlite"
+            warning "无法识别包管理器，请手动安装 sqlite"
         fi
         command -v sqlite3 &>/dev/null || warning "sqlite 安装后仍不可用，自动备份将不可用"
     fi
@@ -70,13 +70,13 @@ check_cron() {
     if ! command -v cron >/dev/null 2>&1; then
         echo "正在安装 cron 服务..."
         if command -v apt-get >/dev/null; then
-            apt-get update && apt-get install -y cron || warning "[Debian/Ubuntu] APT 安装失败，自动备份将不可用"
+            apt-get update && apt-get install -y cron || warning "[Debian/Ubuntu] cron 服务安装失败，自动备份将不可用"
         elif command -v yum >/dev/null; then
-            yum install -y cronie || warning "[CentOS] YUM 安装失败，自动备份将不可用"
+            yum install -y cronie || warning "[CentOS] cron 服务安装失败，自动备份将不可用"
         elif command -v apk >/dev/null; then
-            apk add dcron || warning "[Alpine] APK 安装失败，自动备份将不可用"
+            apk add dcron || warning "[Alpine] cron 服务安装失败，自动备份将不可用"
         else
-            warning "不支持的发行版，自动备份将不可用"
+            warning "不支持的发行版，cron 服务无法安装"
         fi
     fi
 
@@ -89,14 +89,14 @@ check_cron() {
 		    *)      service_name="cron" ;;
 		esac
 		if systemctl is-active $service_name &>/dev/null; then
-		    echo "服务已处于运行状态"
+		    success "cron 服务已处于运行状态"
 		else
-		    systemctl enable --now "$service_name" &>/dev/null || echo "服务启动失败，自动备份将不可用"
+		    systemctl enable --now "$service_name" &>/dev/null || warning "cron 服务启动失败，自动备份将不可用"
 		fi
     elif command -v rc-service >/dev/null; then
-        rc-update add dcron && rc-service dcron start || warning "服务启动失败，自动备份将不可用"  # Alpine使用dcron服务名
+        rc-update add dcron && rc-service dcron start || warning "cron 服务启动失败，自动备份将不可用"  # Alpine使用dcron服务名
     else
-        warning "不支持的服务管理器，自动备份将不可用"
+        warning "不支持的 cron 服务管理器，自动备份将不可用"
     fi
     return 0  # 强制返回成功状态
 }
