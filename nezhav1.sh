@@ -52,11 +52,11 @@ check_sqlite() {
     if ! command -v sqlite3 &>/dev/null; then
         echo "正在尝试自动安装 sqlite3..."
         if command -v apt-get &>/dev/null; then
-            apt-get install -y sqlite3 libsqlite3-dev || warning "sqlite 安装失败，自动备份将不可用"
+            apt-get update && apt-get install -y sqlite3 libsqlite3-dev || warning "sqlite 安装失败，自动备份将不可用"
         elif command -v yum &>/dev/null; then
             yum install -y sqlite sqlite-devel || warning "sqlite 安装失败，自动备份将不可用"
         elif command -v apk &>/dev/null; then
-            apk add sqlite sqlite-dev || warning "sqlite 安装失败，自动备份将不可用"
+            apk add --no-interactive sqlite sqlite-dev || warning "sqlite 安装失败，自动备份将不可用"
         else
             warning "无法识别包管理器，请手动安装 sqlite"
         fi
@@ -70,11 +70,11 @@ check_cron() {
     if ! command -v cron >/dev/null 2>&1; then
         echo "正在安装 cron 服务..."
         if command -v apt-get >/dev/null; then
-            apt-get update && apt-get install -y cron || warning "[Debian/Ubuntu] cron 服务安装失败，自动备份将不可用"
+            apt-get install -y cron || warning "[Debian/Ubuntu] cron 服务安装失败，自动备份将不可用"
         elif command -v yum >/dev/null; then
             yum install -y cronie || warning "[CentOS] cron 服务安装失败，自动备份将不可用"
         elif command -v apk >/dev/null; then
-            apk add dcron || warning "[Alpine] cron 服务安装失败，自动备份将不可用"
+            apk add --no-interactive dcron || warning "[Alpine] cron 服务安装失败，自动备份将不可用"
         else
             warning "不支持的发行版，cron 服务无法安装"
         fi
