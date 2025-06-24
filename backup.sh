@@ -23,6 +23,15 @@ LOG_DIR="/root/argo-nezha-v1"
 LOG_FILES=("update.log" "backup.log")
 LOG_DAYS=7  # 日志保留天数
 
+# 初始化环境
+export GIT_AUTHOR_NAME="[Auto] DB Backup"
+export GIT_AUTHOR_EMAIL="backup@nezhav1.com"
+export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
+export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+export TZ=Asia/Shanghai
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
 urlencode() {
     echo -n "$1" | od -An -tx1 | tr -d '\n ' | sed 's/../%&/g'
 }
@@ -35,23 +44,6 @@ die() { echo "错误: $*" >&2; exit 1; }
 # 检查必要环境变量
 [ -z "$GITHUB_TOKEN" ] || [ -z "$GITHUB_REPO_OWNER" ] || [ -z "$GITHUB_REPO_NAME" ] && {
     die "未设置必要环境变量, 正在跳过备份/还原"
-}
-
-# 检查并安装依赖
-check_dependencies() {
-    if ! command -v sqlite3 &>/dev/null; then
-        echo "正在尝试自动安装 sqlite3..."
-        if command -v apt-get &>/dev/null; then
-            sudo apt-get install -y sqlite3 libsqlite3-dev || die "安装失败"
-        elif command -v yum &>/dev/null; then
-            sudo yum install -y sqlite sqlite-devel || die "安装失败"
-        elif command -v apk &>/dev/null; then
-            sudo apk add sqlite sqlite-dev || die "安装失败"
-        else
-            die "无法识别包管理器，请手动安装sqlite3"
-        fi
-        command -v sqlite3 &>/dev/null || die "sqlite3安装后仍不可用"
-    fi
 }
 
 # 日志清理函数
@@ -77,15 +69,6 @@ clean_old_logs() {
 
     echo "已清理 $deleted_count 个过期日志文件"
 }
-
-# 初始化环境
-export GIT_AUTHOR_NAME="[Auto] DB Backup"
-export GIT_AUTHOR_EMAIL="backup@nezhav1.com"
-export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
-export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-export TZ=Asia/Shanghai
-TEMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TEMP_DIR"' EXIT
 
 # 通用恢复函数
 restore_latest() {
@@ -129,8 +112,6 @@ restore_backup() {
     restore_latest "数据库" "sqlite_*.db" "dashboard/sqlite.db" || return 1
     restore_latest "配置" "config_*.yaml" "dashboard/config.yaml" || return 1
 }
-
-check_dependencies
 
 # 创建备份
 create_backup() {
