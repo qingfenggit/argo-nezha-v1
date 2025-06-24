@@ -17,6 +17,7 @@ error() { echo -e "${RED}[错误]${NC} $1"; }
 GH_PROXY_URL="https://ghfast.top"
 GH_CLONE_URL="https://github.com/yutian81/argo-nezha-v1.git"
 project_dir="argo-nezha-v1"
+export TZ=Asia/Shanghai
 
 # 检查并自动安装docker环境
 check_docker() {
