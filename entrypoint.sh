@@ -8,17 +8,17 @@ export TZ=Asia/Shanghai
 # 检查并安装 sqlite
 check_sqlite() {
     if ! command -v sqlite3 &>/dev/null; then
-        echo "正在尝试自动安装 sqlite3..."
+        echo "正在安装 sqlite3..."
         if command -v apt-get &>/dev/null; then
             apt-get install -y sqlite3 libsqlite3-dev || echo "sqlite 安装失败"
         elif command -v yum &>/dev/null; then
             yum install -y sqlite sqlite-devel || echo "sqlite 安装失败"
         elif command -v apk &>/dev/null; then
-            apk add sqlite sqlite-dev || echo "sqlite 安装失败"
+            apk add --no-interactive sqlite sqlite-dev || echo "sqlite 安装失败"
         else
             echo "无法识别包管理器，请手动安装 sqlite"
         fi
-        command -v sqlite3 &>/dev/null || echo "sqlite 安装后仍不可用"
+        command -v sqlite3 &>/dev/null && success "sqlite 已安装" || echo "sqlite 安装失败"
     fi
 }
 check_sqlite
@@ -29,14 +29,15 @@ check_cron() {
     if ! command -v cron >/dev/null 2>&1; then
         echo "正在安装 cron 服务..."
         if command -v apt-get >/dev/null; then
-            apt-get update && apt-get install -y cron || echo "[Debian/Ubuntu] APT 安装失败，自动备份将不可用"
+            apt-get install -y cron || echo "[Debian/Ubuntu] cron 服务安装失败"
         elif command -v yum >/dev/null; then
-            yum install -y cronie || echo "[CentOS] YUM 安装失败，自动备份将不可用"
+            yum install -y cronie || echo "[CentOS] cron 服务安装失败"
         elif command -v apk >/dev/null; then
-            apk add dcron || echo "[Alpine] APK 安装失败，自动备份将不可用"
+            apk add --no-interactive dcron || echo "[Alpine] cron 服务安装失败"
         else
-            echo "不支持的发行版，自动备份将不可用"
+            echo "不支持的发行版，cron 服务无法安装"
         fi
+		command -v cron >/dev/null 2>&1 && success "cron 服务已安装" || warning "cron 服务安装失败"
     fi
 
     # 服务管理模块
