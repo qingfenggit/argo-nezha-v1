@@ -46,6 +46,89 @@ check_docker() {
     fi
 }
 
+# 检查并安装 sqlite
+check_sqlite() {
+    if ! command -v sqlite3 &>/dev/null; then
+        echo "正在尝试自动安装 sqlite3..."
+        if command -v apt-get &>/dev/null; then
+            apt-get install -y sqlite3 libsqlite3-dev || warning "sqlite 安装失败，自动备份将不可用"
+        elif command -v yum &>/dev/null; then
+            yum install -y sqlite sqlite-devel || warning "sqlite 安装失败，自动备份将不可用"
+        elif command -v apk &>/dev/null; then
+            apk add sqlite sqlite-dev || warning "sqlite 安装失败，自动备份将不可用"
+        else
+            echo "无法识别包管理器，请手动安装 sqlite"
+        fi
+        command -v sqlite3 &>/dev/null || warning "sqlite 安装后仍不可用，自动备份将不可用"
+    fi
+}
+
+# 检查并安装 cron 服务
+check_cron() {
+    # 安装检测逻辑
+    if ! command -v cron >/dev/null 2>&1; then
+        echo "正在安装 cron 服务..."
+        if command -v apt-get >/dev/null; then
+            apt-get update && apt-get install -y cron || warning "[Debian/Ubuntu] APT 安装失败，自动备份将不可用"
+        elif command -v yum >/dev/null; then
+            yum install -y cronie || warning "[CentOS] YUM 安装失败，自动备份将不可用"
+        elif command -v apk >/dev/null; then
+            apk add dcron || warning "[Alpine] APK 安装失败，自动备份将不可用"
+        else
+            warning "不支持的发行版，自动备份将不可用"
+        fi
+    fi
+
+    # 服务管理模块
+    echo "尝试启动并设置开机自启..." 
+    if command -v systemctl >/dev/null; then
+	os_id=$(awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release)
+	case "$os_id" in
+	    centos) service_name="crond" ;;
+	    *)      service_name="cron" ;;
+	esac
+        systemctl enable --now $service_name 2>/dev/null || warning "服务启动失败，自动备份将不可用"
+    elif command -v rc-service >/dev/null; then
+        rc-update add dcron && rc-service dcron start || warning "服务启动失败，自动备份将不可用"  # Alpine使用dcron服务名
+    else
+        warning "不支持的服务管理器，自动备份将不可用"
+    fi
+
+    return 0  # 强制返回成功状态
+}
+
+config_cron() {
+    # 配置自动备份
+    CRON_DIR="$(pwd)"
+    info "当前工作目录为: $CRON_DIR"
+    read -p $'\n是否开启数据自动备份？(每天2点执行) [y/N] ' enable_backup
+
+    if [[ "$enable_backup" =~ [Yy] ]]; then
+        backup_script="$CRON_DIR/backup.sh"
+        backup_log="$CRON_DIR/backup.log"
+        [ -f "$backup_script" ] || { warning "未找到备份脚本: $backup_script"; }
+        chmod +x "$backup_script" || { warning "权限设置失败: $backup_script"; }
+    
+        # 原子化配置定时任务
+        new_job="0 2 * * * /bin/sh '$backup_script' backup >> '$backup_log' 2>&1"
+        (
+            crontab -l 2>/dev/null | grep -vF "$backup_script"
+            echo "$new_job"
+        ) | crontab -
+    
+        # 精确验证任务行
+        if crontab -l | grep -qF "$new_job"; then
+            success "自动备份已启用, 日志目录: $backup_log"
+            echo -e "\n${BLUE}▍当前定时任务:${NC}"
+            crontab -l | grep --color=auto -F "$backup_script"
+        else
+            warning "定时任务添加失败，请手动添加 crontab"
+        fi
+    else
+        info "已跳过自动备份配置"
+    fi
+}
+
 # 检查443端口占用
 check_ports() {
     local port_occupied=false
@@ -253,35 +336,10 @@ main() {
     success "✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
     # 配置自动备份
-    CRON_DIR="$(pwd)"
-    info "当前工作目录为: $CRON_DIR"
-    read -p $'\n是否开启数据自动备份？(每天2点执行) [y/N] ' enable_backup
+    check_sqlite
+    check_cron
+    config_cron
 
-    if [[ "$enable_backup" =~ [Yy] ]]; then
-        backup_script="$CRON_DIR/backup.sh"
-        backup_log="$CRON_DIR/backup.log"
-        [ -f "$backup_script" ] || { warning "未找到备份脚本: $backup_script"; }
-        chmod +x "$backup_script" || { warning "权限设置失败: $backup_script"; }
-    
-        # 原子化配置定时任务
-        new_job="0 2 * * * /bin/bash '$backup_script' backup >> '$backup_log' 2>&1"
-        (
-            crontab -l 2>/dev/null | grep -vF "$new_job"
-            echo "$new_job"
-        ) | crontab -
-    
-        # 精确验证任务行
-        if crontab -l | grep -qF "$new_job"; then
-            success "自动备份已启用, 日志目录: $backup_log"
-            echo -e "\n${BLUE}▍当前定时任务:${NC}"
-            crontab -l | grep --color=auto -F "$backup_script"
-        else
-            warning "定时任务添加失败，请手动添加 crontab"
-        fi
-    else
-        info "已跳过自动备份配置"
-    fi
-    
     # 显示初始访问信息
     echo -e "\n${YELLOW}首次访问可能需要：${NC}"
     echo -e "1. 等待SSL证书自动签发(约1-2分钟)"
