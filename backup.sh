@@ -19,8 +19,10 @@ GITHUB_REPO_OWNER=${GITHUB_REPO_OWNER:-""}
 GITHUB_REPO_NAME=${GITHUB_REPO_NAME:-""}
 BACKUP_BRANCH=${BACKUP_BRANCH:-"nezha-v1"}
 
-LOG_DIR="/root/argo-nezha-v1"
-LOG_FILES=("update.log" "backup.log")
+# 设置日志变量
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+LOG_DIR="$SCRIPT_DIR/logs"
+# LOG_FILES=("$LOG_DIR/update-*.log" "$LOG_DIR/backup-*.log")
 LOG_DAYS=7  # 日志保留天数
 
 # 初始化环境
@@ -50,24 +52,11 @@ die() { echo "错误: $*" >&2; exit 1; }
 # 日志清理函数
 clean_old_logs() {
     echo "正在执行日志清理..."
-    if [ ! -d "$LOG_DIR" ]; then
-        echo "警告: 日志目录不存在 - $LOG_DIR" >&2
-        return 1
-    fi
-    if [ ! -w "$LOG_DIR" ]; then
-        echo "错误: 无写入权限 - $LOG_DIR" >&2
-        return 2
-    fi
-
-    # 清理操作
-    local deleted_count=0
-    for logfile in "${LOG_FILES[@]}"; do
-        find "$LOG_DIR" -maxdepth 1 -name "$logfile" -type f -mtime +$LOG_DAYS | while read -r file; do
-            echo "清理过期日志: $(basename "$file")"
-            rm -f "$file" && ((deleted_count++))
-        done
-    done
-
+    [ ! -d "$LOG_DIR" ] && { echo "警告: 日志目录不存在 - $LOG_DIR" >&2; return 1; }
+    [ ! -w "$LOG_DIR" ] && { echo "错误: 无写入权限 - $LOG_DIR" >&2; return 2; }
+    local deleted_count=$(find "$LOG_DIR" -maxdepth 1 -type f $$ \
+        -name "update-*.log" -o -name "backup-*.log" $$ \
+        -mtime +"$LOG_DAYS" -delete -printf "清理: %f\n" | wc -l)
     echo "已清理 $deleted_count 个过期日志文件"
 }
 
