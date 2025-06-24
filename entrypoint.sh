@@ -66,7 +66,7 @@ check_cron
 echo "设置自动备份任务"
 nezhav1="# NEZHA-V1-BACKUP"
 chmod +x /backup.sh
-backup_job="0 2 * * * /bin/sh '/backup.sh backup' >> /backup.log 2>&1 $nezhav1"
+backup_job="0 2 * * * (date +'\\%Y-\\%m-\\%d \\%H:\\%M:\\%S' && TZ=Asia/Shanghai /bin/sh '/backup.sh backup' >> /backup.log 2>&1 $nezhav1"
 (
     crontab -l 2>/dev/null | grep -vF "$nezhav1"
     echo "$backup_job"
