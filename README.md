@@ -106,7 +106,8 @@ docker compose up -d
 
 **自动更新**：加入系统 corn 任务
 ```bash
-(crontab -l 2>/dev/null | grep -v "argo-nezha-v1"; echo "0 3 * * * cd /root/argo-nezha-v1 && /usr/bin/docker compose pull && /usr/bin/docker compose up -d >> /root/argo-nezha-v1/update.log 2>&1") | crontab -
+(crontab -l 2>/dev/null | grep -v "argo-nezha-v1"
+echo "0 3 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/update-\\\$(date +\\%Y\\%m\\%d-\\%H%M%S).log\"; /usr/bin/docker compose pull && /usr/bin/docker compose up -d > \"\$log_file\" 2>&1)" # NEZHA-V1-UPDATE") | crontab -
 ```
 
 ### 备份和恢复
@@ -118,15 +119,8 @@ docker compose up -d
 如果自动备份没有生效，运行以下命令以添加自动备份的计划任务, 可以通过 `crontab -l` 命令查看是否成功
 
 ```bash
-(crontab -l 2>/dev/null | grep -v "backup.sh"; echo "0 2 * * * /bin/bash /root/argo-nezha-v1/backup.sh backup >> /root/argo-nezha-v1/backup.log 2>&1") | crontab -
-```
-
-**同时添加自动更新和自动备份的任务**
-
-```bash
-(crontab -l 2>/dev/null | grep -vE 'argo-nezha-v1|backup.sh';
- echo "0 3 * * * cd /root/argo-nezha-v1 && docker compose pull && docker compose up -d >> /root/argo-nezha-v1/update.log";
- echo "0 2 * * * /bin/bash /root/argo-nezha-v1/backup.sh backup >> /root/argo-nezha-v1/backup.log") | crontab -
+(crontab -l 2>/dev/null | grep -vF "# NEZHA-V1-BACKUP"
+ echo "0 2 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/backup-\\\$(date +\\%Y\\%m\\%d-\\%H\\%M\\%S).log\"; /bin/sh backup.sh backup > \"\$log_file\" 2>&1) # NEZHA-V1-BACKUP") | crontab -
 ```
 
 ### 手动备份
