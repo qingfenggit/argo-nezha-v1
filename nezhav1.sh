@@ -50,7 +50,7 @@ check_docker() {
 # 检查并安装 sqlite
 check_sqlite() {
     if ! command -v sqlite3 &>/dev/null; then
-        echo "正在尝试自动安装 sqlite3..."
+        info "正在安装 sqlite3..."
         if command -v apt-get &>/dev/null; then
             apt-get update && apt-get install -y sqlite3 libsqlite3-dev || warning "sqlite 安装失败，自动备份将不可用"
         elif command -v yum &>/dev/null; then
@@ -60,7 +60,7 @@ check_sqlite() {
         else
             warning "无法识别包管理器，请手动安装 sqlite"
         fi
-        command -v sqlite3 &>/dev/null || warning "sqlite 安装后仍不可用，自动备份将不可用"
+        command -v sqlite3 &>/dev/null && success "sqlite 已安装" || warning "sqlite 安装失败，自动备份将不可用"
     fi
 }
 
@@ -78,6 +78,7 @@ check_cron() {
         else
             warning "不支持的发行版，cron 服务无法安装"
         fi
+		command -v cron >/dev/null 2>&1 && success "cron 已安装" || warning "cron 服务安装失败，自动备份将不可用"
     fi
 
     # 服务管理模块
