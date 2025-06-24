@@ -2,8 +2,8 @@ name: docker-ghcr-git
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '0 20 * * 6'  # Asia/Shanghai 每周天凌晨4点
+  schedule:
+    - cron: '0 20 * * 6'  # Asia/Shanghai 每周天凌晨4点
 
 env:
   GHCR_USERNAME: ${{ github.actor }}  # 使用GitHub用户名
