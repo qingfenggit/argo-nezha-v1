@@ -56,7 +56,7 @@ check_sqlite() {
         else
             echo "无法识别包管理器，请手动安装 sqlite"
         fi
-        command -v sqlite3 &>/dev/null && success "sqlite 已安装" || echo "sqlite 安装失败"
+        command -v sqlite3 &>/dev/null && echo "sqlite 已安装" || echo "sqlite 安装失败"
     fi
 }
 
@@ -74,7 +74,7 @@ check_cron() {
         else
             echo "不支持的发行版，cron 服务无法安装"
         fi
-		command -v cron >/dev/null 2>&1 && success "cron 服务已安装" || warning "cron 服务安装失败"
+		command -v cron >/dev/null 2>&1 && echo "cron 服务已安装" || echo "cron 服务安装失败"
     fi
 
     # 服务管理模块
