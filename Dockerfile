@@ -3,7 +3,6 @@ FROM ghcr.io/nezhahq/nezha AS app
 FROM nginx:stable-alpine
 
 RUN apk add --no-cache \
-    aws-cli \
     tar \
     gzip \
     tzdata \
