@@ -6,8 +6,14 @@ ARGO_AUTH=${ARGO_AUTH:-""}
 
 # 配置定时备份任务（北京时间每天凌晨2点）
 echo "设置自动备份任务"
-echo "0 2 * * * /backup.sh backup >> /dashboard/backup.log 2>&1" > /var/spool/cron/crontabs/root
+backup_job="0 2 * * * /bin/bash /backup.sh backup >> /backup.log 2>&1"
+(
+    crontab -l 2>/dev/null | grep -vF "$backup_job"
+    echo "$backup_job"
+) | crontab -
+
 /backup.sh restore # 尝试恢复备份
+
 echo "正在启动 crond"  # 启动 crond
 crond
 
