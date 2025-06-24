@@ -5,7 +5,7 @@ ARGO_DOMAIN=${ARGO_DOMAIN:-""}
 ARGO_AUTH=${ARGO_AUTH:-""}
 
 # 检查并安装 sqlite
-check_dependencies() {
+check_sqlite() {
     if ! command -v sqlite3 &>/dev/null; then
         echo "正在尝试自动安装 sqlite3..."
         if command -v apt-get &>/dev/null; then
@@ -20,53 +20,55 @@ check_dependencies() {
         command -v sqlite3 &>/dev/null || echo "sqlite 安装后仍不可用"
     fi
 }
-check_dependencies
+check_sqlite
 
 # 安装 cron 服务
 check_cron() {
-    if ! command -v cron > /dev/null 2>&1; then
+    # 安装检测逻辑
+    if ! command -v cron >/dev/null 2>&1; then
         echo "正在安装 cron 服务..."
-        if command -v apt-get > /dev/null 2>&1; then
-            apt-get update && apt-get install -y cron || echo "使用 apt-get 安装 cron 服务失败，请手动检查并安装。"
-        elif command -v yum > /dev/null 2>&1; then
-            yum install -y cronie || echo "使用 yum 安装 cron 服务失败，请手动检查并安装。"
-        elif command -v apk > /dev/null 2>&1; then
-            apk add dcron || echo "使用 apk 安装 cron 服务失败，请手动检查并安装。"
+        if command -v apt-get >/dev/null; then
+            apt-get update && apt-get install -y cron || echo "[Debian/Ubuntu] APT 安装失败，自动备份将不可用"
+        elif command -v yum >/dev/null; then
+            yum install -y cronie || echo "[CentOS] YUM 安装失败，自动备份将不可用"
+        elif command -v apk >/dev/null; then
+            apk add dcron || echo "[Alpine] APK 安装失败，自动备份将不可用"
         else
-            echo "无法识别当前系统的包管理器，请手动安装 cron 服务。"
+            echo "不支持的发行版，自动备份将不可用"
         fi
     fi
+
+    # 服务管理模块
+    echo "尝试启动并设置开机自启..." 
+    if command -v systemctl >/dev/null; then
+	os_id=$(awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release)
+	case "$os_id" in
+	    centos) service_name="crond" ;;
+	    *)      service_name="cron" ;;
+	esac
+        systemctl enable --now $service_name 2>/dev/null || echo "服务启动失败，自动备份将不可用"
+    elif command -v rc-service >/dev/null; then
+        rc-update add dcron && rc-service dcron start || echo "服务启动失败，自动备份将不可用"  # Alpine使用dcron服务名
+    else
+        echo "不支持的服务管理器，自动备份将不可用"
+    fi
+
+    return 0  # 强制返回成功状态
 }
 check_cron
 
 # 配置定时备份任务（北京时间每天凌晨2点）
 echo "设置自动备份任务"
+nezhav1="# NEZHA-V1-BACKUP"
 chmod +x /backup.sh
-backup_job="0 2 * * * /bin/sh /backup.sh backup >> /backup.log 2>&1"
+backup_job="0 2 * * * /bin/sh '/backup.sh backup' >> /backup.log 2>&1 $nezhav1"
 (
-    crontab -l 2>/dev/null | grep -vF "$backup_job"
+    crontab -l 2>/dev/null | grep -vF "$nezhav1"
     echo "$backup_job"
 ) | crontab -
 
-/backup.sh restore # 尝试恢复备份
-
-start_cron() {
-if ! pgrep -x "cron" > /dev/null; then
-    echo "正在启动 cron 服务"
-    if command -v systemctl > /dev/null 2>&1; then
-        systemctl start cron || echo "使用 systemctl 启动 cron 服务失败，请手动检查并启动。"
-    elif command -v service > /dev/null 2>&1; then
-        service cron start || echo "使用 service 启动 cron 服务失败，请手动检查并启动。"
-    elif command -v rc-service > /dev/null 2>&1; then
-        rc-service cron start || echo "使用 rc-service 启动 cron 服务失败，请手动检查并启动。"
-    elif command -v crond > /dev/null 2>&1; then
-        crond || echo "使用 crond 启动 cron 服务失败，请手动检查并启动。"
-    else
-        echo "无法识别当前系统的服务管理命令，请手动启动 cron 服务。"
-    fi
-fi
-}
-start_cron
+# 尝试恢复备份
+/backup.sh restore
 
 # 启动 dashboard app
 echo "正在启动哪吒面板"
