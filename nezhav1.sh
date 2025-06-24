@@ -110,13 +110,18 @@ config_cron() {
 
     if [[ "$enable_backup" =~ [Yy] ]]; then
         backup_script="$CRON_DIR/backup.sh"
-        backup_log="$CRON_DIR/backup.log"
+        log_dir="$CRON_DIR/logs"
+		mkdir -p "$log_dir" || warning "无法创建日志目录"
 		nezhav1="# NEZHA-V1-BACKUP"
         [ -f "$backup_script" ] || { warning "未找到备份脚本: $backup_script"; }
         chmod +x "$backup_script" || { warning "权限设置失败: $backup_script"; }
     
         # 原子化配置定时任务
-        backup_job="0 2 * * * (date +'\\%Y-\\%m-\\%d \\%H:\\%M:\\%S' && TZ=Asia/Shanghai /bin/sh '$backup_script' backup >> '$backup_log' 2>&1 $nezhav1"
+        backup_job="0 2 * * * ("
+        backup_job+="export TZ=Asia/Shanghai; "
+        backup_job+="log_file=\"$log_dir/backup-\\\$(date +\\%Y\\%m\\%d-\\%H%M%S).log\"; "
+        backup_job+="/bin/sh '$backup_script' backup > \"\$log_file\" 2>&1"
+        backup_job+=") $nezhav1"
         (
             crontab -l 2>/dev/null | grep -vF "$nezhav1"
             echo "$backup_job"
@@ -124,7 +129,7 @@ config_cron() {
     
         # 精确验证任务行
         if crontab -l | grep -qF "$nezhav1"; then
-            success "自动备份已启用, 日志目录: $backup_log"
+            success "自动备份已启用, 日志目录: $log_dir"
             echo -e "\n${BLUE}▍当前定时任务:${NC}"
             crontab -l | grep --color=auto -F "$backup_script"
         else
