@@ -47,13 +47,16 @@ check_cron() {
 	    centos) service_name="crond" ;;
 	    *)      service_name="cron" ;;
 	esac
-        systemctl enable --now $service_name 2>/dev/null || echo "服务启动失败，自动备份将不可用"
+        if systemctl is-active $service_name &>/dev/null; then
+	    echo "服务已处于运行状态"
+	else
+	    systemctl enable --now "$service_name" &>/dev/null || echo "服务启动失败，自动备份将不可用"
+	fi
     elif command -v rc-service >/dev/null; then
         rc-update add dcron && rc-service dcron start || echo "服务启动失败，自动备份将不可用"  # Alpine使用dcron服务名
     else
         echo "不支持的服务管理器，自动备份将不可用"
     fi
-
     return 0  # 强制返回成功状态
 }
 check_cron
