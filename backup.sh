@@ -53,9 +53,9 @@ clean_old_logs() {
     echo "正在执行日志清理..."
     [ ! -d "$LOG_DIR" ] && { echo "警告: 日志目录不存在 - $LOG_DIR" >&2; return 1; }
     [ ! -w "$LOG_DIR" ] && { echo "错误: 无写入权限 - $LOG_DIR" >&2; return 2; }
-    local deleted_count=$(find "$LOG_DIR" -maxdepth 1 -type f $$ \
-        -name "update-*.log" -o -name "backup-*.log" $$ \
-        -mtime +"$LOG_DAYS" -delete -printf "清理: %f\n" | wc -l)
+    local deleted_count=$(find "$LOG_DIR" -maxdepth 1 -type f \
+        \( -name "update-*.log" -o -name "backup-*.log" \) \
+        -mtime +"$LOG_DAYS" -delete -print | wc -l)
     echo "已清理 $deleted_count 个过期日志文件"
 }
 
