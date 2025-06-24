@@ -28,6 +28,7 @@ export GIT_AUTHOR_NAME="[Auto] DB Backup"
 export GIT_AUTHOR_EMAIL="backup@nezhav1.com"
 export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
 export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+export LANG=en_US.UTF-8
 export TZ=Asia/Shanghai
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
