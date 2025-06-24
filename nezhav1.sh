@@ -116,10 +116,10 @@ config_cron() {
         chmod +x "$backup_script" || { warning "权限设置失败: $backup_script"; }
     
         # 原子化配置定时任务
-        backup_job="0 2 * * * /bin/sh '$backup_script' backup >> '$backup_log' 2>&1 $nezhav1"
+        backup_job="0 2 * * * (date +'\\%Y-\\%m-\\%d \\%H:\\%M:\\%S' && TZ=Asia/Shanghai /bin/sh '$backup_script' backup >> '$backup_log' 2>&1 $nezhav1"
         (
             crontab -l 2>/dev/null | grep -vF "$nezhav1"
-            echo "backup_job"
+            echo "$backup_job"
         ) | crontab -
     
         # 精确验证任务行
