@@ -20,7 +20,6 @@ GITHUB_REPO_NAME=${GITHUB_REPO_NAME:-""}
 BACKUP_BRANCH=${BACKUP_BRANCH:-"nezha-v1"}
 
 # 设置日志变量
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 # LOG_FILES=("$LOG_DIR/update-*.log" "$LOG_DIR/backup-*.log")
 LOG_DAYS=7  # 日志保留天数
