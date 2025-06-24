@@ -4,20 +4,20 @@
 ARGO_DOMAIN=${ARGO_DOMAIN:-""}
 ARGO_AUTH=${ARGO_AUTH:-""}
 
-# 检查并安装 sqlite3
+# 检查并安装 sqlite
 check_dependencies() {
     if ! command -v sqlite3 &>/dev/null; then
         echo "正在尝试自动安装 sqlite3..."
         if command -v apt-get &>/dev/null; then
-            sudo apt-get install -y sqlite3 libsqlite3-dev || echo "安装失败"
+            apt-get install -y sqlite3 libsqlite3-dev || echo "sqlite 安装失败"
         elif command -v yum &>/dev/null; then
-            sudo yum install -y sqlite sqlite-devel || echo "安装失败"
+            yum install -y sqlite sqlite-devel || echo "sqlite 安装失败"
         elif command -v apk &>/dev/null; then
-            sudo apk add sqlite sqlite-dev || echo "安装失败"
+            apk add sqlite sqlite-dev || echo "sqlite 安装失败"
         else
-            echo "无法识别包管理器，请手动安装sqlite3"
+            echo "无法识别包管理器，请手动安装 sqlite"
         fi
-        command -v sqlite3 &>/dev/null || echo "sqlite3安装后仍不可用"
+        command -v sqlite3 &>/dev/null || echo "sqlite 安装后仍不可用"
     fi
 }
 check_dependencies
@@ -41,7 +41,8 @@ check_cron
 
 # 配置定时备份任务（北京时间每天凌晨2点）
 echo "设置自动备份任务"
-backup_job="0 2 * * * /bin/bash /backup.sh backup >> /backup.log 2>&1"
+chmod +x /backup.sh
+backup_job="0 2 * * * /bin/sh /backup.sh backup >> /backup.log 2>&1"
 (
     crontab -l 2>/dev/null | grep -vF "$backup_job"
     echo "$backup_job"
