@@ -3,6 +3,7 @@
 # 设置默认值
 ARGO_DOMAIN=${ARGO_DOMAIN:-""}
 ARGO_AUTH=${ARGO_AUTH:-""}
+export TZ=Asia/Shanghai
 
 # 检查并安装 sqlite
 check_sqlite() {
