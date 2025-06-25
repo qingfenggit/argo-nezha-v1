@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   argo-nezha-v1:
     image: yutian81/argo-nezha-v1:latest
