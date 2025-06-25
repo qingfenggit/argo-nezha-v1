@@ -107,7 +107,7 @@ docker compose up -d
 **自动更新**：加入系统 corn 任务
 
 ```bash
-(crontab -l 2>/dev/null | grep -v "NEZHA-V1-UPDATE";
+(crontab -l 2>/dev/null | grep -vF "# NEZHA-V1-UPDATE"
 echo "0 3 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/update-\$(date +\\%Y\\%m\\%d-\\%H\\%M\\%S).log\"; /usr/bin/docker compose pull && /usr/bin/docker compose up -d > \"\$log_file\" 2>&1) # NEZHA-V1-UPDATE"
 ) | crontab -
 ```
