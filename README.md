@@ -105,23 +105,26 @@ docker compose up -d
 ```
 
 **自动更新**：加入系统 corn 任务
+
 ```bash
-(crontab -l 2>/dev/null | grep -v "argo-nezha-v1"
-echo "0 3 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/update-\\\$(date +\\%Y\\%m\\%d-\\%H%M%S).log\"; /usr/bin/docker compose pull && /usr/bin/docker compose up -d > \"\$log_file\" 2>&1) # NEZHA-V1-UPDATE"
+(crontab -l 2>/dev/null | grep -v "NEZHA-V1-UPDATE";
+echo "0 3 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/update-\$(date +\\%Y\\%m\\%d-\\%H\\%M\\%S).log\"; /usr/bin/docker compose pull && /usr/bin/docker compose up -d > \"\$log_file\" 2>&1) # NEZHA-V1-UPDATE"
 ) | crontab -
 ```
+
+> **注意**：需要定期手动清理旧的 docker 镜像，避免磁盘被大量占用
 
 ### 备份和恢复
 
 **项目支持自动备份到 Github 私有仓库**
 
-备份脚本 `/backup.sh` 会在每天凌晨 2 点执行。
+备份脚本 `/backup.sh` 会在每天凌晨 2 点执行，并且会自动清理 7 天前的旧日志以及旧的备份数据
 
 如果自动备份没有生效，运行以下命令以添加自动备份的计划任务, 可以通过 `crontab -l` 命令查看是否成功
 
 ```bash
 (crontab -l 2>/dev/null | grep -vF "# NEZHA-V1-BACKUP"
-echo "0 2 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/backup-\\\$(date +\\%Y\\%m\\%d-\\%H\\%M\\%S).log\"; /bin/sh backup.sh backup > \"\$log_file\" 2>&1) # NEZHA-V1-BACKUP"
+echo "0 2 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/backup-\$(date +\\%Y\\%m\\%d-\\%H\\%M\\%S).log\"; /bin/sh backup.sh backup > \"\$log_file\" 2>&1) # NEZHA-V1-BACKUP"
 ) | crontab -
 ```
 
