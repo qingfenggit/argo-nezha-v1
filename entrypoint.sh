@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # 设置默认值
 ARGO_DOMAIN=${ARGO_DOMAIN:-""}
@@ -113,7 +113,7 @@ config_cron() {
         backup_job="0 2 * * * ("
         backup_job+="export TZ=Asia/Shanghai; "
         backup_job+="log_file=\"$log_dir/backup-\$(date +\%Y\%m\%d-\%H\%M\%S).log\"; "
-        backup_job+="/bin/sh '$backup_script' backup > \"\$log_file\" 2>&1"
+        backup_job+="/bin/bash '$backup_script' backup > \"\$log_file\" 2>&1"
         backup_job+=") $nezhav1"
         (
             crontab -l 2>/dev/null | grep -vF "$nezhav1"
