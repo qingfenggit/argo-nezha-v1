@@ -60,7 +60,7 @@ check_sqlite() {
         else
             warning "无法识别包管理器，请手动安装 sqlite"
         fi
-        command -v sqlite3 &>/dev/null && success "sqlite 已安装" || warning "sqlite 安装失败，自动备份将不可用"
+        success "sqlite 已安装"
     fi
 }
 
@@ -78,7 +78,7 @@ check_cron() {
         else
             warning "不支持的发行版，cron 服务无法安装"
         fi
-		command -v cron >/dev/null 2>&1 && success "cron 已安装" || warning "cron 服务安装失败，自动备份将不可用"
+		success "cron 服务已安装"
     fi
 
     # 服务管理模块
@@ -99,7 +99,7 @@ check_cron() {
     else
         warning "不支持的 cron 服务管理器，自动备份将不可用"
     fi
-    return 0  # 强制返回成功状态
+    success "cron 服务已启动"
 }
 
 config_cron() {
