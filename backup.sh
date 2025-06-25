@@ -1,10 +1,19 @@
 #!/bin/bash
 
+# 确保在 Bash 中执行
+if [ -z "$BASH_VERSION" ]; then
+    exec /bin/bash "$0" "$@"
+    exit 0
+fi
+
 # 加载同目录下的.env文件（如果存在）
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 if [ -f "$SCRIPT_DIR/.env" ]; then
     while IFS='=' read -r key value; do
-        [[ "$key" =~ ^# ]] || [[ -z "$key" ]] && continue
+        # [[ "$key" =~ ^# ]] || [[ -z "$key" ]] && continue
+        case "$key" in
+            ''|'#'*) continue ;;
+        esac
         value="${value%\"}"
         value="${value#\"}"
         value="${value%\'}"
