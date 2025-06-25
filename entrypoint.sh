@@ -38,7 +38,6 @@ check_cron() {
         fi
         echo "cron 服务已安装"
     fi
-    return 0
 }
 
 start_cron_service() {
@@ -64,7 +63,7 @@ start_cron_service() {
         echo "警告: 不支持的服务管理器，自动备份将不可用"
         return 1
     fi
-    return 0
+    echo "cron 服务已启动"
 }
 
 config_cron() {
@@ -132,9 +131,6 @@ if [ -n "$ARGO_AUTH" ]; then
 else
     echo "警告: 未设置 ARGO_AUTH，正在跳过执行 cloudflared"
 fi
-
-# 捕获退出信号
-trap 'kill $(jobs -p)' EXIT
 
 # 等待所有后台进程
 wait
