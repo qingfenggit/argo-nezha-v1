@@ -110,13 +110,13 @@ config_cron() {
 	chmod +x "$backup_script" || { echo "权限设置失败: $backup_script"; }
 	
 	# 原子化配置定时任务
-	backup_job="0 2 * * * ("
-	backup_job+="export TZ=Asia/Shanghai; "
-	backup_job+="log_file=\"$log_dir/backup-\\\$(date +\\%Y\\%m\\%d-\\%H%M%S).log\"; "
-	backup_job+="/bin/sh '$backup_script' backup > \"\$log_file\" 2>&1"
-	backup_job+=") $nezhav1"
-	(
-		crontab -l 2>/dev/null | grep -vF "$nezhav1"
-		echo "$backup_job"
-	) | crontab -
+        backup_job="0 2 * * * ("
+        backup_job+="export TZ=Asia/Shanghai; "
+        backup_job+="log_file=\"$log_dir/backup-\$(date +\%Y\%m\%d-\%H\%M\%S).log\"; "
+        backup_job+="/bin/sh '$backup_script' backup > \"\$log_file\" 2>&1"
+        backup_job+=") $nezhav1"
+        (
+            crontab -l 2>/dev/null | grep -vF "$nezhav1"
+            echo "$backup_job"
+        ) | crontab -
 }
