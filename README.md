@@ -124,7 +124,7 @@ echo "0 3 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p log
 
 ```bash
 (crontab -l 2>/dev/null | grep -vF "# NEZHA-V1-BACKUP"
-echo "0 2 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/backup-\$(date +\\%Y\\%m\\%d-\\%H\\%M\\%S).log\"; /bin/sh backup.sh backup > \"\$log_file\" 2>&1) # NEZHA-V1-BACKUP"
+echo "0 2 * * * (export TZ=Asia/Shanghai; cd /root/argo-nezha-v1 && mkdir -p logs && log_file=\"logs/backup-\$(date +\\%Y\\%m\\%d-\\%H\\%M\\%S).log\"; /bin/bash backup.sh backup > \"\$log_file\" 2>&1) # NEZHA-V1-BACKUP"
 ) | crontab -
 ```
 
