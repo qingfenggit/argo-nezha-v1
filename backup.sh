@@ -10,10 +10,7 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 if [ -f "$SCRIPT_DIR/.env" ]; then
     while IFS='=' read -r key value; do
-        # [[ "$key" =~ ^# ]] || [[ -z "$key" ]] && continue
-        case "$key" in
-            ''|'#'*) continue ;;
-        esac
+        [[ "$key" =~ ^# ]] || [[ -z "$key" ]] && continue
         value="${value%\"}"
         value="${value#\"}"
         value="${value%\'}"
