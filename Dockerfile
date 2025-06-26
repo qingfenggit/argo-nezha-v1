@@ -3,7 +3,7 @@ FROM ghcr.io/nezhahq/nezha AS app
 FROM nginx:stable-alpine
 
 RUN apk add --no-cache \
-    tar gzip tzdata openssl sqlite sqlite-dev dcron coreutils && \
+    tar gzip tzdata openssl sqlite sqlite-dev dcron coreutils openrc && \
     rc-update add dcron && \
     rm -rf /var/cache/apk/*
 
