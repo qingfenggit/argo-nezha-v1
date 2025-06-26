@@ -14,7 +14,7 @@ echo "尝试恢复备份..."
 /backup.sh restore
 
 # 启动 crond
-echo "启动 crond 定时任务服务..."
+echo "启动 cron 定时任务服务..."
 crond
 
 # 启动 dashboard app
