@@ -285,7 +285,7 @@ input_variables() {
     echo -e "${RED}==================================================================${NC}"
     echo -e "- ${RED}aogo 隧道设置 --> 其他设置 --> TLS --> 无TLS验证: on; HTTP2连接: on${NC}"
     echo -e "- ${RED}aogo 隧道设置 --> 主机名 --> 类型：HTTPS --> URL: localhost:443${NC}"
-    echo -e "- ${RED}aogo 域名必须开始 grpc 和 webSockets 连接${NC}"
+    echo -e "- ${RED}aogo 域名必须开启 grpc 和 webSockets 连接${NC}"
     echo -e "${RED}==================================================================${NC}"
     
     while true; do
