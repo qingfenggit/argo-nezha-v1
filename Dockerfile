@@ -3,10 +3,9 @@ FROM ghcr.io/nezhahq/nezha AS app
 FROM nginx:stable-alpine
 
 RUN apk add --no-cache \
-    tar gzip tzdata openssl sqlite sqlite-dev dcron coreutils git curl && \
+    tar gzip tzdata openssl sqlite sqlite-dev dcron coreutils && \
     rc-update add dcron && \
-    mkdir -p /var/log/cron && \
-    touch /var/log/cron/cron.log
+    rm -rf /var/cache/apk/*
 
 COPY --from=cloudflare/cloudflared:latest /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 COPY --from=app /etc/ssl/certs /etc/ssl/certs
