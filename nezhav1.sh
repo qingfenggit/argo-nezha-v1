@@ -356,9 +356,10 @@ main() {
     success "✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
     config_cron # 配置自动备份定时任务
+
+ 	echo -e "\n${BLUE}▍备份说明: ${NC}"
 	echo -e "如果启用了自动备份，则数据备份在 github 仓库的 nezha-v1 分支"
-    echo -e "备份日志在：/root/argo-nezha-v1/logs，备份脚本会自动清理旧备份和旧日志"
-	echo -e "如需备份在其他分支，修改本脚本 310 行，示例：BACKUP_BRANCH=main"
+	echo -e "如需备份在其他分支，修改本脚本约 310 行，示例：BACKUP_BRANCH=main"
 
     # 显示常用的 docker 命令
     echo -e "\n${BLUE}▍管理命令: ${NC}"
