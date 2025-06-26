@@ -356,17 +356,20 @@ main() {
     success "✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
     config_cron # 配置自动备份定时任务
+	echo -e "如果启用了自动备份，则数据备份在 github 仓库的 nezha-v1 分支"
+    echo -e "备份日志在：/root/argo-nezha-v1/logs，备份脚本会自动清理旧备份和旧日志"
+	echo -e "如需备份在其他分支，修改本脚本 310 行，示例：BACKUP_BRANCH=main"
 
     # 显示常用的 docker 命令
     echo -e "\n${BLUE}▍管理命令: ${NC}"
-    echo -e "  🔍 查看状态\t${GREEN}docker ps -a${NC}"
-    echo -e "  📜 查看日志\t${GREEN}docker logs -f argo-nezha-v1${NC}"
+    echo -e "🔍 查看状态\t${GREEN}docker ps -a${NC}"
+    echo -e "📜 查看日志\t${GREEN}docker logs -f argo-nezha-v1${NC}"
     echo -e "\n${BLUE}▍操作指引: ${NC}"
-    echo -e "  📂 请先执行\t${GREEN}cd $project_dir${NC}"
-    echo -e "  🟢 启动服务\t${GREEN}docker compose up -d${NC}"
-    echo -e "  🔴 停止服务\t${GREEN}docker compose stop${NC}"
-    echo -e "  🔄 重启服务\t${GREEN}docker compose restart${NC}"
-    echo -e "  ⬇️ 更新镜像\t${GREEN}docker compose pull && docker compose up -d${NC}"
-    echo -e "  ⚠️ 完全删除\t${GREEN}docker compose down -v${NC} ${RED}警告: 请先备份数据!${NC}"
+    echo -e "📂 请先执行\t${GREEN}cd $project_dir${NC}"
+    echo -e "🟢 启动服务\t${GREEN}docker compose up -d${NC}"
+    echo -e "🔴 停止服务\t${GREEN}docker compose stop${NC}"
+    echo -e "🔄 重启服务\t${GREEN}docker compose restart${NC}"
+    echo -e "⬇️ 更新镜像\t${GREEN}docker compose pull && docker compose up -d${NC}"
+    echo -e "⚠️ 完全删除\t${GREEN}docker compose down -v${NC} ${RED}警告: 请先备份数据!${NC}"
 }
 main
