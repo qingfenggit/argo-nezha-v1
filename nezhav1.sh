@@ -82,7 +82,7 @@ check_cron() {
     fi
 
     # 服务管理模块
-    echo "尝试启动并设置开机自启..." 
+    echo "尝试启动 cron 服务..." 
     if command -v systemctl >/dev/null; then
 		os_id=$(awk -F= '/^ID=/{gsub(/"/,"",$2); print $2}' /etc/os-release)
 		case "$os_id" in
