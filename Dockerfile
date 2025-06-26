@@ -12,24 +12,26 @@ COPY --from=app /etc/ssl/certs /etc/ssl/certs
 
 COPY main.conf /etc/nginx/conf.d/main.conf
 
+ENV TZ=Asia/Shanghai
+
 WORKDIR /dashboard
 
 COPY --from=app /dashboard/app /dashboard/app
 
 RUN mkdir -p /dashboard/data && chmod -R 777 /dashboard
 
-ENV TZ=Asia/Shanghai \
-    ARGO_DOMAIN="" \
-    ARGO_AUTH="" \
-    GITHUB_TOKEN="" \
-    GITHUB_REPO_OWNER="" \
-    GITHUB_REPO_NAME="" \
-    BACKUP_BRANCH=""
+EXPOSE 8008
+
+ENV ARGO_DOMAIN="" \
+    CF_TOKEN="" \
+    R2_ACCESS_KEY_ID="" \
+    R2_BUCKET_NAME="" \
+    R2_ENDPOINT_URL="" \
+    R2_SECRET_ACCESS_KEY=""
 
 COPY backup.sh /backup.sh
 COPY entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /backup.sh && chmod +x /entrypoint.sh
 
-EXPOSE 8008
 CMD ["/entrypoint.sh"]
