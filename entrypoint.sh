@@ -7,7 +7,7 @@ CF_TOKEN=${CF_TOKEN:-""}
 # 配置定时备份任务
 echo "配置定时备份任务..."
 mkdir -p "/logs" || echo "无法创建日志目录"
-echo "0 2 * * * /backup.sh backup >> /logs/backup.log 2>&1" > /var/spool/cron/crontabs/root
+echo "0 2 * * * /backup.sh backup > /logs/backup.log 2>&1 # NEZHA-V1-BACKUP" > /var/spool/cron/crontabs/root
 
 # 尝试恢复备份
 echo "尝试恢复备份..."
