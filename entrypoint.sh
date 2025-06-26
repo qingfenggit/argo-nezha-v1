@@ -29,7 +29,7 @@ if [ -n "$ARGO_DOMAIN" ]; then
     openssl req -new -subj "/CN=$ARGO_DOMAIN" -key /dashboard/nezha.key -out /dashboard/nezha.csr
     openssl x509 -req -days 36500 -in /dashboard/nezha.csr -signkey /dashboard/nezha.key -out /dashboard/nezha.pem
 else
-    echo "Warning: ARGO_DOMAIN is not set, skipping certificate generation"
+    echo "警告: 未设置 ARGO_DOMAIN, 跳过生成证书"
 fi
 
 # 启动 Nginx
