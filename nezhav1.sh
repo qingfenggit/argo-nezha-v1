@@ -90,7 +90,7 @@ check_cron() {
 		    *)      service_name="cron" ;;
 		esac
 		if systemctl is-active $service_name &>/dev/null; then
-		    success "cron 服务已处于运行状态"
+		    success "cron 服务正在运行..."
 		else
 		    systemctl enable --now "$service_name" &>/dev/null || warning "cron 服务启动失败，自动备份将不可用"
 		fi
@@ -99,7 +99,6 @@ check_cron() {
     else
         warning "不支持的 cron 服务管理器，自动备份将不可用"
     fi
-    success "cron 服务已启动"
 }
 
 config_cron() {
