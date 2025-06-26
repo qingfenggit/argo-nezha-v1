@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # 设置默认值
 ARGO_DOMAIN=${ARGO_DOMAIN:-""}
