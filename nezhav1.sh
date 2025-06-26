@@ -279,8 +279,15 @@ input_variables() {
     esac
     
     echo -e "\n${YELLOW}Argo Token 说明：${NC}"
-    echo -e " - 纯Token格式: 'ey开头的一长串字符'"
-    echo -e " - JSON格式: '{\"Token\":\"xxx\"}' (注意单引号包裹)"
+    echo -e "- 纯Token格式: 'ey开头的一长串字符'"
+    echo -e "- JSON格式: '{\"Token\":\"xxx\"}' (注意单引号包裹)"
+    echo -e "\n${YELLOW}以下设置必须严格遵守，否则无法访问面板${NC}"
+    echo -e "${RED}==================================================================${NC}"
+    echo -e "- ${RED}aogo 隧道设置 --> 其他设置 --> TLS --> 无TLS验证: on; HTTP2连接: on${NC}"
+    echo -e "- ${RED}aogo 隧道设置 --> 主机名 --> 类型：HTTPS --> URL: localhost:443${NC}"
+    echo -e "- ${RED}aogo 域名必须开始 grpc 和 webSockets 连接${NC}"
+    echo -e "${RED}==================================================================${NC}"
+    
     while true; do
         read -p $'\n请输入Argo Token: ' ARGO_AUTH
         [ -n "$ARGO_AUTH" ] && break
@@ -349,12 +356,6 @@ main() {
     success "✅ 哪吒面板部署成功! 访问地址: https://${ARGO_DOMAIN}"
 
     config_cron # 配置自动备份定时任务
-
-    # 显示初始访问信息
-    echo -e "\n${YELLOW}首次访问可能需要：${NC}"
-    echo -e "1. 等待SSL证书自动签发(约1-2分钟)"
-    echo -e "2. 检查防火墙/安全组放行443端口"
-    echo -e "3. aogo 隧道要打开--其他设置--TLS--无TLS验证: on; HTTP2连接: on"
 
     # 显示常用的 docker 命令
     echo -e "\n${BLUE}▍管理命令: ${NC}"
