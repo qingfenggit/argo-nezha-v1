@@ -72,7 +72,7 @@ clean_old_logs() {
     echo "已清理 $deleted_count 个过期日志文件"
 }
 
-// 克隆备份仓库
+# 克隆备份仓库
 clone_backup_branch() {
     local target_dir=$1
     if git clone --depth "$CLONE_DEPTH" --branch "$BACKUP_BRANCH" --single-branch "$CLONE_URL" "$target_dir" 2>/dev/null; then
@@ -92,7 +92,8 @@ restore_latest() {
     find_output=$(mktemp)
     find "$TEMP_DIR/backup_repo/dashboard" -name "$pattern" -exec stat -c "%Y %n" {} \; 2>/dev/null > "$find_output"
     # 处理查找结果
-    latest_file=$(sort -nr "$find_output" | head -1 | awk '{print $2}')
+    latest_file=$(sort -nr "$find_output" | head -1 | cut -d' ' -f2-)
+    # latest_file=$(sort -nr "$find_output" | head -1 | awk '{print $2}')
     rm -f "$find_output"
     if [ -z "$latest_file" ]; then
         echo "注意: 未找到$file_type备份文件"
@@ -117,8 +118,7 @@ restore_backup() {
         return
     fi
 
-    git clone --depth 1 --branch "$BACKUP_BRANCH" --single-branch "$CLONE_URL" "$TEMP_DIR/backup_repo" 2>/dev/null || \
-        die "克隆备份仓库失败"
+    clone_backup_branch "$TEMP_DIR/backup_repo" || die "克隆备份仓库失败"
     
     echo "正在从备份恢复数据..."
     mkdir -p dashboard/
@@ -126,7 +126,7 @@ restore_backup() {
     restore_latest "配置" "config_*.yaml" "dashboard/config.yaml" || return 1
 }
 
-// 删除旧备份
+# 删除旧备份
 cleanup_old_backups() {
     echo "开始清理 GitHub 仓库中超过 7 天的备份..."
     local repo_dir="$TEMP_DIR/cleanup_repo"
@@ -136,7 +136,7 @@ cleanup_old_backups() {
     fi
     cd "$TEMP_DIR/cleanup_repo" || return 1
 
-    cutoff_date=$(date -d "-7 days" +%Y%m%d)
+    cutoff_date=$(date -u -v-7d +%Y%m%d 2>/dev/null || date -d "-7 days" +%Y%m%d)
     DELETED_FILES=()
 
     while IFS= read -r -d '' file; do
