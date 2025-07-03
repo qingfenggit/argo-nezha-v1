@@ -28,6 +28,7 @@ BACKUP_BRANCH=${BACKUP_BRANCH:-"nezha-v1"}
 # 设置日志变量
 LOG_DIR="$SCRIPT_DIR/logs"
 LOG_DAYS=7  # 日志保留天数
+CLONE_DEPTH=20
 
 # 初始化环境
 export GIT_AUTHOR_NAME="[Auto] DB Backup"
@@ -130,7 +131,7 @@ create_backup() {
     }
     
     # 初始化Git仓库
-    if git clone --depth 1 --branch "$BACKUP_BRANCH" --single-branch "$CLONE_URL" "$BACKUP_DIR/repo" 2>/dev/null; then
+    if git clone --depth $CLONE_DEPTH --branch "$BACKUP_BRANCH" --single-branch "$CLONE_URL" "$BACKUP_DIR/repo" 2>/dev/null; then
         mv "$BACKUP_DIR/repo/.git" "$BACKUP_DIR/"
         rm -rf "$BACKUP_DIR/repo"
     else
@@ -152,7 +153,7 @@ create_backup() {
             filename=$(basename "$file")
             if [[ "$filename" =~ ^sqlite_([0-9]{8})- || "$filename" =~ ^config_([0-9]{8})- ]]; then
                 file_date="${BASH_REMATCH[1]}"
-                if [[ "$file_date" =~ ^[0-9]{8}$ && "$file_date" -lt "$cutoff_date" ]]; then
+                if [[ "$file_date" =~ ^[0-9]{8}$ && "$file_date" -le "$cutoff_date" ]]; then
                     DELETED_FILES+=("$file")
                 fi
             fi
