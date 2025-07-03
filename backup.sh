@@ -167,7 +167,7 @@ cleanup_old_backups() {
 
     git commit -m "自动清理: 删除超过7天的备份" || true
     git push origin "$BACKUP_BRANCH" || echo "⚠️ 删除旧备份失败，请检查远程权限"
-    clean_old_logs || { echo "无可清理的日志" }
+    clean_old_logs || { echo "无可清理的日志"; }
 }
 
 # 创建备份
