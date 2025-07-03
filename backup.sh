@@ -72,6 +72,17 @@ clean_old_logs() {
     echo "已清理 $deleted_count 个过期日志文件"
 }
 
+// 克隆备份仓库
+clone_backup_branch() {
+    local target_dir=$1
+    if git clone --depth "$CLONE_DEPTH" --branch "$BACKUP_BRANCH" --single-branch "$CLONE_URL" "$target_dir" 2>/dev/null; then
+        return 0
+    else
+        echo "❌ 克隆分支失败：$BACKUP_BRANCH"
+        return 1
+    fi
+}
+
 # 通用恢复函数
 restore_latest() {
     local file_type=$1 pattern=$2 target=$3
@@ -115,12 +126,56 @@ restore_backup() {
     restore_latest "配置" "config_*.yaml" "dashboard/config.yaml" || return 1
 }
 
+// 删除旧备份
+cleanup_old_backups() {
+    echo "开始清理 GitHub 仓库中超过 7 天的备份..."
+    local repo_dir="$TEMP_DIR/cleanup_repo"
+    if ! clone_backup_branch "$repo_dir"; then
+        echo "未找到备份分支或克隆失败，跳过清理"
+        return
+    fi
+    cd "$TEMP_DIR/cleanup_repo" || return 1
+
+    cutoff_date=$(date -d "-7 days" +%Y%m%d)
+    DELETED_FILES=()
+
+    while IFS= read -r -d '' file; do
+        filename=$(basename "$file")
+        if [[ "$filename" =~ ^sqlite_([0-9]{8})- ]]; then
+            file_date="${BASH_REMATCH[1]}"
+        elif [[ "$filename" =~ ^config_([0-9]{8})- ]]; then
+            file_date="${BASH_REMATCH[1]}"
+        else
+            continue
+        fi
+
+        if [[ "$file_date" -le "$cutoff_date" ]]; then
+            DELETED_FILES+=("$file")
+        fi
+    done < <(find dashboard -type f \( -name "sqlite_*.db" -o -name "config_*.yaml" \) -print0 2>/dev/null)
+
+    if [ ${#DELETED_FILES[@]} -eq 0 ]; then
+        echo "没有需要清理的旧备份。"
+        return
+    fi
+
+    echo "准备删除以下过期备份文件："
+    for file in "${DELETED_FILES[@]}"; do
+        echo " - $(basename "$file")"
+        git rm -q "$file" 2>/dev/null || true
+    done
+
+    git commit -m "自动清理: 删除超过7天的备份" || true
+    git push origin "$BACKUP_BRANCH" || echo "⚠️ 删除旧备份失败，请检查远程权限"
+    clean_old_logs || { echo "无可清理的日志" }
+}
+
 # 创建备份
 create_backup() {
     TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
     COMMIT_TIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S %Z')
     BACKUP_DIR="$TEMP_DIR/backup_$TIMESTAMP"
-    
+
     [ ! -f "dashboard/sqlite.db" ] && die "数据库文件不存在"
     mkdir -p "$BACKUP_DIR/dashboard"
     sqlite3 "dashboard/sqlite.db" "VACUUM INTO '$BACKUP_DIR/dashboard/sqlite_$TIMESTAMP.db'" || \
@@ -129,9 +184,9 @@ create_backup() {
         cp "dashboard/config.yaml" "$BACKUP_DIR/dashboard/config_$TIMESTAMP.yaml" || \
         die "配置文件config.yaml备份失败"
     }
-    
-    # 初始化Git仓库
-    if git clone --depth $CLONE_DEPTH --branch "$BACKUP_BRANCH" --single-branch "$CLONE_URL" "$BACKUP_DIR/repo" 2>/dev/null; then
+
+    # 初始化 Git 仓库
+    if clone_backup_branch "$BACKUP_DIR/repo"; then
         mv "$BACKUP_DIR/repo/.git" "$BACKUP_DIR/"
         rm -rf "$BACKUP_DIR/repo"
     else
@@ -141,51 +196,31 @@ create_backup() {
             git checkout -b "$BACKUP_BRANCH"
         )
     fi
-    
+
     (
         cd "$BACKUP_DIR" || exit 1
         git remote add origin "$CLONE_URL" 2>/dev/null
-        
-        # 清理旧备份（基于文件名时间戳）
-        cutoff_date=$(date -d "-7 days" +%Y%m%d)
-        DELETED_FILES=()
-        while IFS= read -r -d '' file; do
-            filename=$(basename "$file")
-            if [[ "$filename" =~ ^sqlite_([0-9]{8})- || "$filename" =~ ^config_([0-9]{8})- ]]; then
-                file_date="${BASH_REMATCH[1]}"
-                if [[ "$file_date" =~ ^[0-9]{8}$ && "$file_date" -le "$cutoff_date" ]]; then
-                    DELETED_FILES+=("$file")
-                fi
-            fi
-        done < <(find dashboard -type f \( -name "sqlite_*.db" -o -name "config_*.yaml" \) -print0 2>/dev/null)
-        
-        if [ ${#DELETED_FILES[@]} -gt 0 ]; then
-            echo "清理过期备份:"
-            for file in "${DELETED_FILES[@]}"; do
-                echo " - $(basename "$file")"
-                git rm -q --cached "$file" 2>/dev/null
-                rm -f "$file"
-            done
-            git commit -m "自动清理: 删除超过7天的备份" --allow-empty || true
-        fi
-        
         git add dashboard/sqlite_$TIMESTAMP.db dashboard/config_$TIMESTAMP.yaml
         git commit -m "新增备份 $COMMIT_TIME" --allow-empty
-        git push origin "$BACKUP_BRANCH" || die "推送备份到GitHub失败"
+        git push origin "$BACKUP_BRANCH" || die "推送备份到 GitHub 失败"
     )
 
-    clean_old_logs || { echo "无可清理的日志" >&2; }
-    
-    echo "备份完成！新增备份文件："
+    echo "✅ 备份完成！新增备份文件："
     echo " - sqlite_$TIMESTAMP.db"
     echo " - config_$TIMESTAMP.yaml"
 }
 
 # 主逻辑
 case "$1" in
-    restore) restore_backup ;;
-    backup)  create_backup ;;
+    restore)
+        restore_backup
+        ;;
+    backup)
+        cleanup_old_backups
+        create_backup
+        ;;
     *)
-    echo "Usage: $0 {backup|restore}" >&2
-    exit 1 ;;
+        echo "Usage: $0 {backup|restore}" >&2
+        exit 1
+        ;;
 esac
