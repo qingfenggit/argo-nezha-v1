@@ -56,11 +56,18 @@ die() { echo "错误: $*" >&2; exit 1; }
 # 日志清理函数
 clean_old_logs() {
     echo "正在执行日志清理..."
-    [ ! -d "$LOG_DIR" ] && { echo "警告: 日志目录不存在 - $LOG_DIR" >&2; return 1; }
+    [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR" 2>/dev/null
     [ ! -w "$LOG_DIR" ] && { echo "错误: 无写入权限 - $LOG_DIR" >&2; return 2; }
-    local deleted_count=$(find "$LOG_DIR" -maxdepth 1 -type f \
+    
+    local deleted_count=0
+    while IFS= read -r -d $'\0' file; do
+        rm -f "$file"
+        echo "已删除日志: $(basename "$file")"
+        ((deleted_count++))
+    done < <(find "$LOG_DIR" -maxdepth 1 -type f \
         \( -name "update-*.log" -o -name "backup-*.log" \) \
-        -mtime +"$LOG_DAYS" -delete -print | wc -l)
+        -mtime +"$LOG_DAYS" -print0 2>/dev/null)
+    
     echo "已清理 $deleted_count 个过期日志文件"
 }
 
@@ -137,19 +144,33 @@ create_backup() {
     (
         cd "$BACKUP_DIR" || exit 1
         git remote add origin "$CLONE_URL" 2>/dev/null
-        # 清理旧备份
-        set -e
-        DELETED_FILES=$(find dashboard -type f \( -name "sqlite_*.db" -o -name "config_*.yaml" \) -mtime +7)
-        [ -n "$DELETED_FILES" ] && {
+        
+        # 清理旧备份（基于文件名时间戳）
+        cutoff_date=$(date -d "-7 days" +%Y%m%d)
+        DELETED_FILES=()
+        while IFS= read -r -d '' file; do
+            filename=$(basename "$file")
+            if [[ "$filename" =~ ^sqlite_([0-9]{8})- || "$filename" =~ ^config_([0-9]{8})- ]]; then
+                file_date="${BASH_REMATCH[1]}"
+                if [[ "$file_date" =~ ^[0-9]{8}$ && "$file_date" -lt "$cutoff_date" ]]; then
+                    DELETED_FILES+=("$file")
+                fi
+            fi
+        done < <(find dashboard -type f \( -name "sqlite_*.db" -o -name "config_*.yaml" \) -print0 2>/dev/null)
+        
+        if [ ${#DELETED_FILES[@]} -gt 0 ]; then
             echo "清理过期备份:"
-            echo "$DELETED_FILES" | xargs -r git rm --quiet --cached
-            echo "$DELETED_FILES" | xargs -r rm -f
+            for file in "${DELETED_FILES[@]}"; do
+                echo " - $(basename "$file")"
+                git rm -q --cached "$file" 2>/dev/null
+                rm -f "$file"
+            done
             git commit -m "自动清理: 删除超过7天的备份" --allow-empty || true
-        }
+        fi
+        
         git add dashboard/sqlite_$TIMESTAMP.db dashboard/config_$TIMESTAMP.yaml
         git commit -m "新增备份 $COMMIT_TIME" --allow-empty
         git push origin "$BACKUP_BRANCH" || die "推送备份到GitHub失败"
-        set +e
     )
 
     clean_old_logs || { echo "无可清理的日志" >&2; }
