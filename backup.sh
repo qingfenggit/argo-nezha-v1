@@ -28,6 +28,9 @@ BACKUP_BRANCH=${BACKUP_BRANCH:-"nezha-v1"}
 # 设置日志变量
 LOG_DIR="$SCRIPT_DIR/logs"
 LOG_DAYS=7  # 日志保留天数
+DATA_DIR="$SCRIPT_DIR/dashboard"
+[ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR"
+[ ! -d "$DATA_DIR" ] && mkdir -p "$DATA_DIR"
 CLONE_DEPTH=20
 
 # 初始化环境
@@ -57,7 +60,6 @@ die() { echo "错误: $*" >&2; exit 1; }
 # 日志清理函数
 clean_old_logs() {
     echo "正在执行日志清理..."
-    [ ! -d "$LOG_DIR" ] && mkdir -p "$LOG_DIR" 2>/dev/null
     [ ! -w "$LOG_DIR" ] && { echo "错误: 无写入权限 - $LOG_DIR" >&2; return 2; }
     
     local deleted_count=0
@@ -121,9 +123,12 @@ restore_backup() {
     clone_backup_branch "$TEMP_DIR/backup_repo" || die "克隆备份仓库失败"
     
     echo "正在从备份恢复数据..."
-    mkdir -p dashboard/
-    restore_latest "数据库" "sqlite_*.db" "dashboard/sqlite.db" || return 1
-    restore_latest "配置" "config_*.yaml" "dashboard/config.yaml" || return 1
+    if [ ! -d "$DATA_DIR" ]; then
+        echo "没有找到备份文件夹，跳过恢复"
+        return
+    fi
+    restore_latest "数据库" "sqlite_*.db" "$DATA_DIR/sqlite.db" || return 1
+    restore_latest "配置" "config_*.yaml" "$DATA_DIR/config.yaml" || return 1
 }
 
 # 删除旧备份
@@ -175,15 +180,12 @@ create_backup() {
     TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
     COMMIT_TIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S %Z')
     BACKUP_DIR="$TEMP_DIR/backup_$TIMESTAMP"
-
-    [ ! -f "dashboard/sqlite.db" ] && die "数据库文件不存在"
-    mkdir -p "$BACKUP_DIR/dashboard"
-    sqlite3 "dashboard/sqlite.db" "VACUUM INTO '$BACKUP_DIR/dashboard/sqlite_$TIMESTAMP.db'" || \
+    mkdir -p "$BACKUP_DIR/dashboard" || die "无法创建目录"
+    
+    sqlite3 "$DATA_DIR/sqlite.db" "VACUUM INTO '$BACKUP_DIR/dashboard/sqlite_$TIMESTAMP.db'" || \
         die "数据库sqlite.db备份失败"
-    [ -f "dashboard/config.yaml" ] && {
-        cp "dashboard/config.yaml" "$BACKUP_DIR/dashboard/config_$TIMESTAMP.yaml" || \
+    cp "$DATA_DIR/config.yaml" "$BACKUP_DIR/dashboard/config_$TIMESTAMP.yaml" || \
         die "配置文件config.yaml备份失败"
-    }
 
     # 初始化 Git 仓库
     if clone_backup_branch "$BACKUP_DIR/repo"; then
