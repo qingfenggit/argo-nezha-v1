@@ -29,7 +29,7 @@ ENV ARGO_DOMAIN="" \
     R2_ENDPOINT_URL="" \
     R2_SECRET_ACCESS_KEY=""
 
-COPY backup.sh /backup.sh
+COPY docker_backup.sh /backup.sh
 COPY entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /backup.sh && chmod +x /entrypoint.sh
