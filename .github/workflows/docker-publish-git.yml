@@ -88,9 +88,6 @@ jobs:
           MESSAGE="新的 ${{ env.DOCKER_IMAGE_NAME }} 镜像已推送 🚀%0A%0A"
           MESSAGE+="版本: ${{ steps.get_latest_tag.outputs.latest_tag }}%0A"
           MESSAGE+="镜像地址: $DOCKER_IMAGE_URL"
-          curl -s -X POST "https://api.telegram.org/bot${{ env.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ env.TELEGRAM_CHAT_ID }}" \
-            -d text="$MESSAGE"
             
   cleanup-runs:
     runs-on: ubuntu-latest
