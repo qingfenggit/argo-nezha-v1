@@ -1,6 +1,6 @@
 services:
   argo-nezha-v1:
-    image: yutian81/argo-nezha-v1:latest
+    image: qingfzf/argo-nezha-v1:latest
     container_name: argo-nezha-v1
     restart: unless-stopped
     ports:
