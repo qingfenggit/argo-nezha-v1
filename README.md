@@ -86,7 +86,7 @@ docker pull qingfzf/argo-nezha-v1:latest
 2. **设置变量**
 
 变量名与vps搭建相同
-如果有本地本存储必须挂在/dashboard/data目录，没有可以不写
+如果有存储必须挂在/dashboard/data目录，没有可以不写
 
 3. **暴露443端口**
 
