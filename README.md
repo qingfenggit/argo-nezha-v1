@@ -2,7 +2,6 @@
 
 本项目修改自 [ssfun/argo-nezha](https://github.com/ssfun/argo-nezha)，原版采用 cf-r2 作为备份方案，我改成了采用 `github 私有仓库`作为备份方案
 
-**完整教程**:<https://blog.811520.xyz/post/2025/04/nezhav1-argo-bak/>
 
 ----
 
@@ -87,6 +86,7 @@ docker pull qingfzf/argo-nezha-v1:latest
 2. **设置变量**
 
 变量名与vps搭建相同
+如果有本地本存储必须挂在/dashboard/data目录，没有可以不写
 
 3. **暴露443端口**
 
