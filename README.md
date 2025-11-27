@@ -71,7 +71,7 @@ https://你在argo隧道中设置的面板域名
 依次执行以下命令: 注意--需要在 .env 文件中填入变量值
 
 ```bash
-git clone -b github https://ghproxy.net/https://github.com/yutian81/argo-nezha-v1.git
+git clone -b github https://ghproxy.net/https://github.com/qingfenggit/argo-nezha-v1.git
 cd argo-nezha-v1
 docker compose pull
 docker compose up -d
@@ -81,7 +81,7 @@ docker compose up -d
 1. **拉取dockhub镜像**
 
 ```bash
-docker pull yutian81/argo-nezha-v1:latest
+docker pull qingfzf/argo-nezha-v1:latest
 ```
 
 2. **设置变量**
