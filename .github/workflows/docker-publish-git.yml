@@ -14,8 +14,48 @@ env:
   
 
 jobs:
-  build-and-push:
+  check-upstream:
     runs-on: ubuntu-latest
+    outputs:
+      upstream_version: ${{ steps.check.outputs.upstream_version }}
+      need_update: ${{ steps.check.outputs.need_update }}
+    steps:
+      - name: Checkout local repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 必须设置为 0，拉取所有历史记录和 tags 用于对比本地版本
+
+      - name: Check upstream release version
+        id: check
+        run: |
+          # 1. 获取上游官方仓库的最新 Release Tag (这里以 naiba/nezha 为例，如需监控其他组件请替换 URL)
+          UPSTREAM_VERSION=$(curl -sL https://api.github.com/repos/naiba/nezha/releases/latest | jq -r .tag_name)
+          
+          # 2. 获取本地仓库最新的 Tag
+          # 如果你的仓库还没打过 Tag，默认给个初始值 v0.0.0
+          LOCAL_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          
+          echo "Upstream Latest: $UPSTREAM_VERSION"
+          echo "Local Latest: $LOCAL_VERSION"
+          
+          echo "upstream_version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+          
+          # 3. 对比版本
+          if [ "$UPSTREAM_VERSION" != "$LOCAL_VERSION" ] && [ "$UPSTREAM_VERSION" != "null" ]; then
+            echo "need_update=true" >> $GITHUB_OUTPUT
+            echo "::notice::发现新版本 $UPSTREAM_VERSION，准备触发构建。"
+          else
+            echo "need_update=false" >> $GITHUB_OUTPUT
+            echo "当前已是最新版本，无需动作。"
+          fi
+          
+  build-and-push:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.need_update == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 必须赋予写入权限，以便构建完成后推送新的 Tag
+      packages: write
 
     steps:
       - name: Checkout code
